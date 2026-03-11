@@ -12,3 +12,6 @@
 - Added shared JavaScript helpers under `lib/` for findings and workspace/workflow discovery.
 - Added normalized `summary` and `findings` output to the baseline audit, including remediation text for weak repository settings.
 - Revalidated the baseline audit against `/tmp/geppetto`, which now reports two findings: unrestricted allowed actions and missing SHA pinning requirements.
+- Implemented `pin-third-party-actions.js` as the first local workflow lint script.
+- Added fixture-style CLI integration coverage for the pinning rule and fixed the initial parser bug so `- uses:` lines are detected correctly.
+- Validated the pinning rule against `/tmp/geppetto`, which currently reports 22 unpinned action or reusable-workflow references across the local workflow files.

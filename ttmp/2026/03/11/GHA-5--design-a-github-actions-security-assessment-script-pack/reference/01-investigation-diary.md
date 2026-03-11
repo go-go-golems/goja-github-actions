@@ -10,8 +10,12 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: examples/pin-third-party-actions.js
+      Note: First local lint script implemented in Step 4
     - Path: integration/examples_test.go
-      Note: Integration coverage for the findings-based permissions audit
+      Note: |-
+        Integration coverage for the findings-based permissions audit
+        Fixture-style integration coverage for the first local lint script
     - Path: lib/findings.js
       Note: Shared helper introduced during the first implementation slice
     - Path: lib/workspace.js
@@ -28,6 +32,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -306,5 +311,109 @@ The important architectural change is that the repo now has a shared helper laye
   ],
   "allowedActions": "all",
   "shaPinningRequired": false
+}
+```
+
+## Step 4: Implement the first local workflow lint rule
+
+This step delivered `pin-third-party-actions.js`, the first real local workflow lint script from the GHA-5 backlog. It scans `.github/workflows/*.yml`, extracts `uses:` references, ignores local and Docker-based references, and flags anything not pinned to a full 40-character commit SHA. It reuses the shared `lib/findings.js` and `lib/workspace.js` helpers introduced in the previous step.
+
+The first implementation had a bug: it matched only `uses:` at the start of a line and missed the common `- uses:` step form. That showed up immediately in the integration test. After fixing the parser, the script behaved correctly and produced a much larger and more realistic finding set on `/tmp/geppetto`.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 3)
+
+**Assistant interpretation:** Continue implementing the next GHA-5 tasks and keep moving through the backlog.
+
+**Inferred user intent:** Build the script pack incrementally, validate each slice, and keep the ticket documentation continuation-friendly.
+
+### What I did
+
+- Added [pin-third-party-actions.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/pin-third-party-actions.js).
+- Added integration coverage in [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go) for:
+  - JSON output
+  - human-readable report output
+- Ran the script against `/tmp/geppetto` in both `--json-result` and human-report modes.
+
+### Why
+
+- This was the highest-value and lowest-complexity local lint rule from the design backlog.
+- It also exercises the newly added shared helper layer in a second real script, which is important before adding more lint rules.
+
+### What worked
+
+- The script fits naturally into the current runtime surface; no Go runtime changes were needed.
+- The geppetto workflows produced a realistic first result set with many unpinned refs.
+- The human report format is already readable enough to use directly in a terminal.
+
+### What didn't work
+
+- The initial parser regex only matched `uses:` and missed `- uses:` lines.
+- Exact test failure:
+
+```text
+summary.findingCount = 0, want 2
+```
+
+and then:
+
+```text
+human report missing "pin-third-party-actions"
+```
+
+- The first failure exposed the parser bug; the second showed that the human report needed a `Rule` column to make the output self-describing.
+
+### What I learned
+
+- Even a “simple” YAML-lint rule benefits from fixture-based tests immediately, because line-shape assumptions are easy to get wrong.
+- `/tmp/geppetto` currently has 22 unpinned action or reusable-workflow references across its local workflow files.
+
+### What was tricky to build
+
+- The parser deliberately stays shallow for now, but that means the matching rules must be chosen carefully. The right compromise for this first pass was:
+  - detect plain `uses:` and `- uses:` lines,
+  - ignore local `./...` actions,
+  - ignore `docker://...`,
+  - treat any remaining non-SHA ref as a finding.
+
+### What warrants a second pair of eyes
+
+- Whether GitHub-owned actions such as `actions/checkout` should eventually have a different severity or policy mode than other external actions.
+- Whether reusable workflow references should remain under the same rule or split into a dedicated rule later.
+
+### What should be done in the future
+
+- Implement `checkout-persist-creds.js` next.
+- Add more workflow fixtures so the next lint rules do not keep re-embedding YAML inline in the test file.
+
+### Code review instructions
+
+- Start with [pin-third-party-actions.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/pin-third-party-actions.js).
+- Then review the two new integration tests in [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go).
+- Finally compare the live `/tmp/geppetto` output against the repo’s actual workflow files.
+
+### Technical details
+
+- Validation commands:
+  - `GOWORK=off go test ./integration`
+  - `source .envrc && GOWORK=off go run ./cmd/goja-gha run --script ./examples/pin-third-party-actions.js --cwd /tmp --workspace /tmp/geppetto --json-result | jq '{summary, findingCount: (.findings|length), firstThree: [.findings[:3][] | {path: .evidence.path, line: .evidence.line, uses: .evidence.uses}]}'`
+- Live `/tmp/geppetto` result summary:
+
+```json
+{
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 22,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 22,
+    "highestSeverity": "high",
+    "status": "findings"
+  },
+  "findingCount": 22
 }
 ```
