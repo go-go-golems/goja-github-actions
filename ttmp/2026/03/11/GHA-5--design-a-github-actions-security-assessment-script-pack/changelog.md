@@ -8,3 +8,7 @@
 - Added a ticket-scoped `/tmp/geppetto` baseline validation script and output capture plan.
 - Ran the baseline validation against `/tmp/geppetto` and captured both JSON and human-readable outputs under `scripts/`.
 - Recorded live baseline findings for `go-go-golems/geppetto`: `allowed_actions=all`, `sha_pinning_required=false`, `default_workflow_permissions=read`, `selectedActionsStatus=skipped-not-selected-policy`, and seven local workflow files under `.github/workflows`.
+- Promoted `permissions-audit.js` into a findings-based baseline repository security audit.
+- Added shared JavaScript helpers under `lib/` for findings and workspace/workflow discovery.
+- Added normalized `summary` and `findings` output to the baseline audit, including remediation text for weak repository settings.
+- Revalidated the baseline audit against `/tmp/geppetto`, which now reports two findings: unrestricted allowed actions and missing SHA pinning requirements.

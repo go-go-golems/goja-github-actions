@@ -1,6 +1,35 @@
 {
   "actor": null,
   "eventName": null,
+  "findings": [
+    {
+      "evidence": {
+        "allowed_actions": "all"
+      },
+      "message": "Repository allows all GitHub Actions and reusable workflows.",
+      "remediation": {
+        "example": "Set repository Actions permissions so `allowed_actions` is `selected` and configure `selected-actions` patterns.",
+        "summary": "Prefer `selected` with an explicit allowlist, or `local_only` if the repository only needs local actions."
+      },
+      "ruleId": "allowed-actions-not-restricted",
+      "scope": "repository",
+      "severity": "high",
+      "whyItMatters": "Allowing all actions increases supply-chain risk because workflows can consume mutable third-party actions without an allowlist boundary."
+    },
+    {
+      "evidence": {
+        "sha_pinning_required": false
+      },
+      "message": "Repository does not require full commit SHA pinning for actions.",
+      "remediation": {
+        "summary": "Enable SHA pinning requirements if your policy is to require full commit SHAs for external actions."
+      },
+      "ruleId": "sha-pinning-not-required",
+      "scope": "repository",
+      "severity": "medium",
+      "whyItMatters": "Without SHA pinning requirements, mutable tags such as `@v1` can still be used in workflows."
+    }
+  ],
   "localWorkflowFiles": [
     "codeql-analysis.yml",
     "dependency-scanning.yml",
@@ -20,12 +49,25 @@
     "error": "runner output file path is empty",
     "written": false
   },
+  "scriptId": "permissions-audit",
   "selectedActions": null,
   "selectedActionsReason": "selected-actions only applies when allowed_actions == \"selected\" (got all)",
   "selectedActionsStatus": "skipped-not-selected-policy",
   "stepSummary": {
     "error": "runner summary file path is empty",
     "written": false
+  },
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 1,
+      "info": 0,
+      "low": 0,
+      "medium": 1
+    },
+    "findingCount": 2,
+    "highestSeverity": "high",
+    "status": "findings"
   },
   "workflowCount": 10,
   "workflowPermissions": {

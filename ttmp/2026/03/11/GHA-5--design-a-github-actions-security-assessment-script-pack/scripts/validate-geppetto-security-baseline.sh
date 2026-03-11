@@ -33,8 +33,11 @@ GOWORK=off go run ./cmd/goja-gha run \
   --event-path ./testdata/events/workflow_dispatch.json >"$REPORT_OUT"
 
 jq '{
+  scriptId,
   repository,
   workspace,
+  summary,
+  findings,
   workflowCount,
   localWorkflowFiles,
   selectedActionsStatus,

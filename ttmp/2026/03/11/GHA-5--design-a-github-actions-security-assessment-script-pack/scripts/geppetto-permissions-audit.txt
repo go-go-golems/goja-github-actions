@@ -1,7 +1,7 @@
 GitHub Actions Audit
 ====================
 
-OK     Inspected go-go-golems/geppetto
+WARN   Inspected go-go-golems/geppetto
 
 Repository            go-go-golems/geppetto
 
@@ -10,6 +10,12 @@ Workspace             /tmp/geppetto
 Actor                 unknown
 
 Event                 unknown
+
+Assessment            findings
+
+Finding count         2
+
+Highest severity      high
 
 Allowed actions       all
 
@@ -22,6 +28,13 @@ SKIP   selected-actions only applies when allowed_actions == "selected" (got all
 WARN   Runner output file not written: runner output file path is empty
 
 WARN   Step summary file not written: runner summary file path is empty
+
+Findings
+--------
+Severity  Rule                            Message                                                         
+--------  ------------------------------  ----------------------------------------------------------------
+HIGH      allowed-actions-not-restricted  Repository allows all GitHub Actions and reusable workflows.    
+MEDIUM    sha-pinning-not-required        Repository does not require full commit SHA pinning for actions.
 
 Workflows
 ---------

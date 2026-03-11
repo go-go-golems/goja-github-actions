@@ -108,7 +108,12 @@ go run ./cmd/goja-gha run \
   --json-result
 ```
 
-For a plain local run, you do not need to provide `GITHUB_OUTPUT` or `GITHUB_STEP_SUMMARY` just to get a result anymore. The example now keeps going and reports best-effort runner-file status under `runnerOutput` and `stepSummary` in the returned JSON.
+For a plain local run, you do not need to provide `GITHUB_OUTPUT` or `GITHUB_STEP_SUMMARY` just to get a result anymore. The example now keeps going and returns a baseline audit object with:
+
+- `scriptId`
+- `summary`
+- `findings`
+- best-effort runner-file status under `runnerOutput` and `stepSummary`
 
 If you want immediate debugging detail, use the same command with root logging enabled:
 
@@ -246,6 +251,13 @@ The example also now follows the GitHub API contract for `selected-actions` more
 - `selectedActionsReason: ...`
 
 In a normal `run` without `--json-result`, the script now prints a human-oriented report. In a `--json-result` run, the UI report is suppressed and the returned object stays machine-readable.
+
+The current baseline findings focus on repository-level policy settings first. At the moment that includes:
+
+- unrestricted `allowed_actions`
+- missing SHA pinning requirements
+- non-read-only default workflow permissions
+- Actions approving pull request reviews
 
 ### `examples/list-workflows.js`
 

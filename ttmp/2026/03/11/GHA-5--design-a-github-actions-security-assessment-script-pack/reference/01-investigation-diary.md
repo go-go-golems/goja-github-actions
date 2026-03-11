@@ -10,6 +10,12 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: integration/examples_test.go
+      Note: Integration coverage for the findings-based permissions audit
+    - Path: lib/findings.js
+      Note: Shared helper introduced during the first implementation slice
+    - Path: lib/workspace.js
+      Note: Shared workspace helper introduced during the first implementation slice
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-permissions-audit.json
       Note: Captured JSON output from the live geppetto validation
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-permissions-audit.txt
@@ -22,6 +28,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 # Diary
@@ -194,5 +201,110 @@ This matters because the script pack is supposed to be practical, not purely the
   "selectedActionsStatus": "skipped-not-selected-policy",
   "allowedActions": "all",
   "defaultWorkflowPermissions": "read"
+}
+```
+
+## Step 3: Turn the baseline audit into a findings-based repository security audit
+
+This step promoted `permissions-audit.js` from a raw settings dump into the first real repository security assessment script. The script now returns a stable `scriptId`, `summary`, and `findings` contract, and it renders those findings in a human-readable table. I also added the first shared JavaScript helper files under `lib/` so later scripts can reuse the same workspace and findings logic.
+
+The important architectural change is that the repo now has a shared helper layer for security scripts. That means the next workflow-lint scripts do not need to invent their own severity ranking or result-shape conventions.
+
+### Prompt Context
+
+**User prompt (verbatim):** "ok, continue working on thos tasks then"
+
+**Assistant interpretation:** Resume GHA-5 implementation and start completing the planned task list instead of stopping at the design packet.
+
+**Inferred user intent:** Move from planning into incremental implementation while keeping ticket bookkeeping and the diary up to date.
+
+### What I did
+
+- Added:
+  - [findings.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/findings.js)
+  - [workspace.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/workspace.js)
+- Updated [permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js) to:
+  - set `scriptId`,
+  - compute normalized `findings`,
+  - compute `summary`,
+  - attach remediation text,
+  - render a `Findings` section in the human report.
+- Updated [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go) to assert the new JSON/result shape and human-report content.
+- Re-ran the ticket validation script and refreshed the captured outputs under `scripts/`.
+
+### Why
+
+- The GHA-5 backlog explicitly called for a structured findings contract before the first useful release.
+- The later workflow-lint scripts need a shared severity and summary model, and `permissions-audit.js` was the right place to prove it first.
+
+### What worked
+
+- The new `lib/` helper layout works cleanly with the current CommonJS/module-root setup.
+- Integration tests passed without needing Go runtime changes.
+- The live `/tmp/geppetto` audit now reports two concrete baseline findings instead of only echoing settings.
+
+### What didn't work
+
+- The ticket validation script originally summarized only the raw policy fields, so it had to be updated to include the new `scriptId`, `summary`, and `findings`.
+
+### What I learned
+
+- `lib/` is a practical place for shared JS helpers in this repo because the runtime’s module roots already include the repo root for scripts under `examples/`.
+- A normalized findings contract immediately improves both CLI output and testability.
+
+### What was tricky to build
+
+- The main design choice was deciding which repo-level settings should count as actual findings now versus later. I kept the first pass intentionally narrow: unrestricted allowed actions, missing SHA pinning requirements, non-read-only default token, and Actions approving PR reviews. That keeps the baseline useful without overclaiming on settings we are not yet modeling deeply.
+
+### What warrants a second pair of eyes
+
+- The exact severity assignments for repo-level settings findings.
+- Whether `permissions-audit.js` should eventually cover more organization-level comparison logic or stay repo-focused.
+
+### What should be done in the future
+
+- Build `pin-third-party-actions.js` next, using the same `summary/findings` contract.
+- Add a shared report helper once the second or third script exists.
+
+### Code review instructions
+
+- Start with [findings.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/findings.js) and [workspace.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/workspace.js).
+- Then read [permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js).
+- Finally review [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go) for the expected result shape.
+
+### Technical details
+
+- Validation commands:
+  - `GOWORK=off go test ./integration`
+  - `source .envrc && GOWORK=off go run ./cmd/goja-gha run --script ./examples/permissions-audit.js --cwd /tmp --workspace /tmp/geppetto --event-path ./testdata/events/workflow_dispatch.json --json-result | jq '{scriptId, summary, findings, allowedActions: .permissions.allowed_actions, shaPinningRequired: .permissions.sha_pinning_required}'`
+- Live `/tmp/geppetto` result:
+
+```json
+{
+  "scriptId": "permissions-audit",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 1,
+      "info": 0,
+      "low": 0,
+      "medium": 1
+    },
+    "findingCount": 2,
+    "highestSeverity": "high",
+    "status": "findings"
+  },
+  "findings": [
+    {
+      "ruleId": "allowed-actions-not-restricted",
+      "severity": "high"
+    },
+    {
+      "ruleId": "sha-pinning-not-required",
+      "severity": "medium"
+    }
+  ],
+  "allowedActions": "all",
+  "shaPinningRequired": false
 }
 ```

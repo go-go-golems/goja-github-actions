@@ -68,7 +68,14 @@ go run ./cmd/goja-gha run \
   --json-result
 ```
 
-When you run `permissions-audit.js` locally without `GITHUB_OUTPUT` or `GITHUB_STEP_SUMMARY`, the script now returns JSON and records best-effort runner-file status in `runnerOutput` and `stepSummary` instead of failing the whole run.
+When you run `permissions-audit.js` locally without `GITHUB_OUTPUT` or `GITHUB_STEP_SUMMARY`, the script now returns JSON with:
+
+- `scriptId`
+- `summary`
+- `findings`
+- best-effort runner-file status in `runnerOutput` and `stepSummary`
+
+instead of failing the whole run.
 
 Debug the permissions-audit example with structured logs:
 
@@ -94,6 +101,13 @@ If the repository does not use `allowed_actions = "selected"`, the example now s
 - `selectedActions: null`
 - `selectedActionsStatus: "skipped-not-selected-policy"`
 - `selectedActionsReason: ...`
+
+The baseline audit currently emits repository-level findings for settings such as:
+
+- unrestricted `allowed_actions`
+- missing SHA pinning requirements
+- non-read-only default workflow permissions
+- Actions approving pull request reviews
 
 ## Local Action Wrapper
 

@@ -10,11 +10,11 @@
 
 ## Phase 1: Stabilize the baseline audit
 
-- [ ] Promote `examples/permissions-audit.js` from “example” to baseline security audit semantics.
-- [ ] Add explicit severity evaluation to the permissions audit result.
-- [ ] Return a normalized `findings` array from the permissions audit.
-- [ ] Add remediation text for weak settings such as `allowed_actions=all`.
-- [ ] Decide whether to split repository and organization settings checks into separate scripts now or later.
+- [x] Promote `examples/permissions-audit.js` from “example” to baseline security audit semantics.
+- [x] Add explicit severity evaluation to the permissions audit result.
+- [x] Return a normalized `findings` array from the permissions audit.
+- [x] Add remediation text for weak settings such as `allowed_actions=all`.
+- [x] Decide whether to split repository and organization settings checks into separate scripts now or later.
 
 ## Phase 2: Build the first local workflow lint scripts
 
@@ -29,7 +29,7 @@
 ## Phase 3: Introduce shared helpers
 
 - [ ] Add a shared workflow file discovery helper for scripts.
-- [ ] Add a shared finding/result builder helper.
+- [x] Add a shared finding/result builder helper.
 - [ ] Add a shared report renderer helper built on `@goja-gha/ui`.
 - [ ] Decide whether YAML parsing should remain JS-side or move into a Go-native helper module.
 - [ ] If needed, add a native workflow/YAML helper module.
@@ -53,7 +53,7 @@
 ## Validation and rollout
 
 - [x] Run the baseline validation script against `/tmp/geppetto` and capture JSON and report outputs in the ticket `scripts/` directory.
-- [ ] Keep `/tmp/geppetto` as a live smoke target for the baseline audit and future lint scripts.
+- [x] Keep `/tmp/geppetto` as a live smoke target for the baseline audit and future lint scripts.
 - [ ] Validate the first lint scripts against fixture repos and a real repo checkout.
 - [ ] Document required token scopes for each API-backed script.
 - [ ] Add user-facing help/docs once the first three or four scripts exist.
@@ -61,7 +61,7 @@
 
 ## Exit criteria for the first useful release
 
-- [ ] Repository settings audit returns structured findings and a readable report.
+- [x] Repository settings audit returns structured findings and a readable report.
 - [ ] At least three local workflow lint scripts exist and pass fixture-based tests.
 - [ ] Scripts share a consistent JSON result contract.
 - [ ] A new engineer can run the scripts against `/tmp/geppetto` without guessing hidden prerequisites.

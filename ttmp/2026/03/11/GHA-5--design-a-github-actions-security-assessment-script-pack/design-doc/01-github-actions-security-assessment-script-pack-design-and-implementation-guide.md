@@ -16,6 +16,10 @@ RelatedFiles:
       Note: Existing workflow inventory example that informs future lint scripts
     - Path: examples/permissions-audit.js
       Note: Current baseline security audit script used as the starting point for the pack
+    - Path: lib/findings.js
+      Note: Shared findings severity and summary helper now used by the baseline audit
+    - Path: lib/workspace.js
+      Note: Shared workspace and workflow-file helper used by the baseline audit
     - Path: pkg/modules/exec/module.go
       Note: Subprocess module available for advanced assessment scripts
     - Path: pkg/modules/github/module.go
@@ -34,6 +38,7 @@ LastUpdated: 2026-03-11T12:22:30.743484419-04:00
 WhatFor: Help a new engineer understand the current goja-gha architecture, the security checks proposed in the imported planning notes, and the concrete scripts to build first.
 WhenToUse: Use when planning or implementing GitHub Actions security assessment scripts, especially when deciding what can be built today versus what needs new runtime support.
 ---
+
 
 
 # GitHub Actions security assessment script pack design and implementation guide
@@ -167,7 +172,7 @@ The `@actions/io` binding in [pkg/modules/io/module.go](/home/manuel/workspaces/
 - `mv`
 - `which`
 
-Relative paths are resolved against `Settings.WorkingDirectory`, not `GITHUB_WORKSPACE`. This distinction is critical. It is why [permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js) now explicitly uses `process.env.GITHUB_WORKSPACE || process.cwd()` to locate local workflow files.
+Relative paths now resolve against the workspace-first execution root. In practice that means repo-inspection scripts can treat `process.cwd()` and relative `@actions/io` calls as workspace-relative by default.
 
 ### Subprocess surface
 
@@ -196,14 +201,15 @@ This is the right output surface for security assessment scripts. A user running
 
 ### Existing baseline script
 
-[permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js) is the current baseline and the correct starting reference. It already demonstrates:
+[permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js) is now the baseline repository security audit and the correct starting reference. It already demonstrates:
 
 - API access through `octokit.rest.actions.*`;
 - local workspace inspection with `@actions/io`;
+- a normalized `summary` plus `findings` contract;
 - human report output with `@goja-gha/ui`;
 - graceful handling of the `selected-actions` API when `allowed_actions != "selected"`.
 
-That script is not yet a full security auditor, but it proves the baseline architecture.
+That script is not yet the full script pack, but it now proves the baseline result contract and reporting architecture.
 
 ## Why the planning notes are directionally correct
 
@@ -379,14 +385,7 @@ This output shape is valuable because it works in:
 
 ### 1. Shared workflow file discovery helper
 
-The current `permissions-audit.js` already demonstrates the correct workspace resolution rule:
-
-```javascript
-const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
-const workflowDir = `${workspace}/.github/workflows`;
-```
-
-This should become a shared helper once the security scripts multiply. Every local workflow lint script will need this.
+The current `permissions-audit.js` already uses a shared helper in [workspace.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/workspace.js) to resolve workspace and local workflow files. Every local workflow lint script should reuse that approach.
 
 Recommended helper responsibilities:
 
@@ -397,22 +396,18 @@ Recommended helper responsibilities:
 
 ### 2. Shared findings/report helper
 
-The report DSL is already strong enough, but the scripts need a shared pattern for:
+The report DSL is already strong enough, and the first shared helper now exists in [findings.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/findings.js). The scripts still need a shared pattern for:
 
 - counting findings by severity;
 - showing `OK` versus `WARN` versus `ERROR`;
 - rendering a finding table or a list of findings;
 - returning a consistent JSON shape.
 
-Recommended helper API sketch:
+Implemented helper API sketch:
 
 ```javascript
 function summarizeFindings(findings) {
-  // compute counts, highest severity, pass/fail state
-}
-
-function renderFindingReport(ui, title, result) {
-  // render summary + metadata + findings table/list
+  // implemented in lib/findings.js
 }
 ```
 
@@ -476,19 +471,22 @@ Purpose:
 
 Current state:
 
-- already implemented in [permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js).
+- implemented in [permissions-audit.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/permissions-audit.js);
+- returns `scriptId`, `summary`, and normalized `findings`;
+- uses shared helpers in:
+  - [findings.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/findings.js)
+  - [workspace.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/lib/workspace.js)
 
-What it should grow into:
+What it should grow into next:
 
-- explicit severity evaluation, not just raw values;
-- findings for weak defaults such as `allowed_actions=all`;
 - optional org-policy comparison if org settings are fetched too.
+- more repo-level settings rules such as fork approval policy or private-fork workflow settings.
 
 Implementation notes:
 
 - preserve the current `selected-actions` skip behavior;
 - keep the report human-readable first;
-- return a consistent findings array even when no issues are found.
+- maintain the current `summary/findings` shape as the contract for future scripts.
 
 ### 2. `pin-third-party-actions.js`
 
@@ -821,6 +819,8 @@ Observed result snapshot for `/tmp/geppetto`:
 - `permissions.sha_pinning_required`: `false`
 - `workflowPermissions.default_workflow_permissions`: `read`
 - `selectedActionsStatus`: `skipped-not-selected-policy`
+- `summary.findingCount`: `2`
+- `summary.highestSeverity`: `high`
 
 Those results already justify the next scripts:
 

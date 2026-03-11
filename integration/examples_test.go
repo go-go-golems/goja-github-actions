@@ -28,8 +28,9 @@ func TestPermissionsAuditExampleViaCLI(t *testing.T) {
 		switch r.URL.Path {
 		case "/repos/acme/widgets/actions/permissions":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"enabled":         true,
-				"allowed_actions": "selected",
+				"enabled":              true,
+				"allowed_actions":      "selected",
+				"sha_pinning_required": true,
 			})
 		case "/repos/acme/widgets/actions/permissions/selected-actions":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -110,6 +111,23 @@ func TestPermissionsAuditExampleViaCLI(t *testing.T) {
 	if got, want := result["selectedActionsStatus"], "fetched"; got != want {
 		t.Fatalf("selectedActionsStatus = %v, want %v", got, want)
 	}
+	summary, ok := result["summary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("summary = %#v, want map", result["summary"])
+	}
+	if got, want := summary["status"], "passed"; got != want {
+		t.Fatalf("summary.status = %v, want %v", got, want)
+	}
+	if got, want := summary["findingCount"], float64(0); got != want {
+		t.Fatalf("summary.findingCount = %v, want %v", got, want)
+	}
+	findingsValue, ok := result["findings"].([]interface{})
+	if !ok {
+		t.Fatalf("findings = %#v, want slice", result["findings"])
+	}
+	if len(findingsValue) != 0 {
+		t.Fatalf("findings len = %d, want 0", len(findingsValue))
+	}
 
 	outputBytes, err := os.ReadFile(outputFile)
 	if err != nil {
@@ -136,8 +154,9 @@ func TestPermissionsAuditSkipsSelectedActionsWhenPolicyIsNotSelected(t *testing.
 		switch r.URL.Path {
 		case "/repos/acme/widgets/actions/permissions":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"enabled":         true,
-				"allowed_actions": "all",
+				"enabled":              true,
+				"allowed_actions":      "all",
+				"sha_pinning_required": false,
 			})
 		case "/repos/acme/widgets/actions/permissions/selected-actions":
 			selectedActionsCalls++
@@ -213,6 +232,20 @@ func TestPermissionsAuditSkipsSelectedActionsWhenPolicyIsNotSelected(t *testing.
 	if !ok || len(files) != 1 || files[0] != "ci.yml" {
 		t.Fatalf("localWorkflowFiles = %#v, want [ci.yml]", result["localWorkflowFiles"])
 	}
+	summary, ok := result["summary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("summary = %#v, want map", result["summary"])
+	}
+	if got, want := summary["status"], "findings"; got != want {
+		t.Fatalf("summary.status = %v, want %v", got, want)
+	}
+	if got, want := summary["highestSeverity"], "high"; got != want {
+		t.Fatalf("summary.highestSeverity = %v, want %v", got, want)
+	}
+	findingsValue, ok := result["findings"].([]interface{})
+	if !ok || len(findingsValue) < 2 {
+		t.Fatalf("findings = %#v, want at least 2 findings", result["findings"])
+	}
 }
 
 func TestPermissionsAuditExamplePrintsHumanReportWithoutJSONResult(t *testing.T) {
@@ -222,8 +255,9 @@ func TestPermissionsAuditExamplePrintsHumanReportWithoutJSONResult(t *testing.T)
 		switch r.URL.Path {
 		case "/repos/acme/widgets/actions/permissions":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"enabled":         true,
-				"allowed_actions": "all",
+				"enabled":              true,
+				"allowed_actions":      "all",
+				"sha_pinning_required": false,
 			})
 		case "/repos/acme/widgets/actions/permissions/workflow":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -279,6 +313,10 @@ func TestPermissionsAuditExamplePrintsHumanReportWithoutJSONResult(t *testing.T)
 		"Inspected acme/widgets",
 		"Workspace",
 		workspace,
+		"Finding count",
+		"Highest severity",
+		"Findings",
+		"allowed-actions-not-restricted",
 		"Allowed actions",
 		"selected-actions only applies when allowed_actions == \"selected\"",
 		"Workflows",
