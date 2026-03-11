@@ -12,6 +12,8 @@ Owners: []
 RelatedFiles:
     - Path: examples/checkout-persist-creds.js
       Note: Second local lint script implemented in Step 5
+    - Path: examples/no-write-all.js
+      Note: Third local lint script implemented in Step 6
     - Path: examples/pin-third-party-actions.js
       Note: First local lint script implemented in Step 4
     - Path: integration/examples_test.go
@@ -34,6 +36,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -515,5 +518,93 @@ summary.findingCount = 0, want 1
     "status": "findings"
   },
   "findingCount": 6
+}
+```
+
+## Step 6: Implement the write-all permissions rule
+
+This step delivered `no-write-all.js`, the third local workflow lint script from the core GHA-5 pack. It scans workflow files for `permissions: write-all` at both workflow and job scope and emits high-severity findings when it sees them. Unlike the previous two rules, this one produced a clean result on `/tmp/geppetto`, which is useful because the script pack also needs “pass with no findings” cases, not only failing examples.
+
+The rule is intentionally simple. It does not attempt to infer whether a broad explicit permission map is effectively equivalent to `write-all`; it only flags the explicit `write-all` shortcut. That keeps the rule precise and low-noise for the first pass.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 3)
+
+**Assistant interpretation:** Continue the GHA-5 implementation sequence with the next local lint rule.
+
+**Inferred user intent:** Build out the first useful lint pack and validate each rule against both fixtures and a real repository.
+
+### What I did
+
+- Added [no-write-all.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/no-write-all.js).
+- Added integration coverage in [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go) for:
+  - workflow-level `permissions: write-all`
+  - job-level `permissions: write-all`
+  - human-readable report output
+- Ran the script against `/tmp/geppetto` in JSON and human-report modes.
+
+### Why
+
+- `permissions: write-all` is one of the explicit policy anti-patterns called out in the original design notes.
+- The rule is narrow enough to be reliable with line-based scanning and does not need a more advanced YAML parser yet.
+
+### What worked
+
+- The rule is simple and deterministic.
+- The fixture test proves that both workflow-level and job-level cases are caught.
+- The real `/tmp/geppetto` run passed cleanly, which is a good signal that the rule is not overfiring on the current repo.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- Not every rule needs to produce findings on the live repo to be valuable; a verified clean pass is still useful evidence.
+- The current geppetto workflows do not use the explicit `write-all` shortcut.
+
+### What was tricky to build
+
+- The only subtlety was distinguishing a workflow-level `permissions` line from a job-level one. For this first pass, tracking the current `jobs:` section and current job block indentation was enough.
+
+### What warrants a second pair of eyes
+
+- Whether later versions should expand the rule to reason about explicit broad permission maps, not just the `write-all` shortcut.
+
+### What should be done in the future
+
+- Implement `pull-request-target-review.js` next.
+- Decide when the current repeated workflow-scanning patterns should move into a shared helper.
+
+### Code review instructions
+
+- Start with [no-write-all.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/no-write-all.js).
+- Then inspect the new `no-write-all` integration tests in [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go).
+- Finally compare the clean `/tmp/geppetto` result against the local workflow files to confirm there are no explicit `write-all` declarations.
+
+### Technical details
+
+- Validation commands:
+  - `GOWORK=off go test ./integration`
+  - `source .envrc && GOWORK=off go run ./cmd/goja-gha run --script ./examples/no-write-all.js --cwd /tmp --workspace /tmp/geppetto --json-result | jq '{scriptId, summary, findings}'`
+- Live `/tmp/geppetto` result:
+
+```json
+{
+  "scriptId": "no-write-all",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 0,
+    "highestSeverity": null,
+    "status": "passed"
+  },
+  "findings": []
 }
 ```

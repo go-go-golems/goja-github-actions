@@ -16,6 +16,8 @@ RelatedFiles:
       Note: Second implemented local workflow lint script from the GHA-5 backlog
     - Path: examples/list-workflows.js
       Note: Existing workflow inventory example that informs future lint scripts
+    - Path: examples/no-write-all.js
+      Note: Third implemented local workflow lint script from the GHA-5 backlog
     - Path: examples/permissions-audit.js
       Note: Current baseline security audit script used as the starting point for the pack
     - Path: examples/pin-third-party-actions.js
@@ -42,6 +44,7 @@ LastUpdated: 2026-03-11T12:22:30.743484419-04:00
 WhatFor: Help a new engineer understand the current goja-gha architecture, the security checks proposed in the imported planning notes, and the concrete scripts to build first.
 WhenToUse: Use when planning or implementing GitHub Actions security assessment scripts, especially when deciding what can be built today versus what needs new runtime support.
 ---
+
 
 
 

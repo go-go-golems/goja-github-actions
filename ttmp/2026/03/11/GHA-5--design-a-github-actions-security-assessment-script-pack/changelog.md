@@ -18,3 +18,6 @@
 - Implemented `checkout-persist-creds.js` as the second local workflow lint script.
 - Added fixture-style CLI integration coverage for the checkout credential rule and fixed the initial parser so it scans whole step blocks instead of only matching `- uses:` lines.
 - Validated the checkout credential rule against `/tmp/geppetto`, which now reports 6 checkout steps missing `persist-credentials: false`.
+- Implemented `no-write-all.js` as the third local workflow lint script.
+- Added fixture-style CLI integration coverage for workflow-level and job-level `permissions: write-all`.
+- Validated the write-all rule against `/tmp/geppetto`, which currently passes with zero findings.

@@ -20,7 +20,7 @@
 
 - [x] Implement `pin-third-party-actions.js`.
 - [x] Implement `checkout-persist-creds.js`.
-- [ ] Implement `no-write-all.js`.
+- [x] Implement `no-write-all.js`.
 - [ ] Implement `pull-request-target-review.js`.
 - [ ] Implement `workflow-run-review.js`.
 - [ ] Add fixture workflows covering safe and unsafe patterns for each script.

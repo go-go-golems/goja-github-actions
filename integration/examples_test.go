@@ -629,3 +629,117 @@ jobs:
 		}
 	}
 }
+
+func TestNoWriteAllExampleViaCLI(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+
+	workflow := `name: CI
+permissions: write-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - run: echo hi
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "ci.yml"), []byte(workflow), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/no-write-all.js",
+		"--cwd", tempDir,
+		"--workspace", workspace,
+		"--json-result",
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha no-write-all failed: %v\n%s", err, string(output))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		t.Fatalf("decode json result: %v\n%s", err, string(output))
+	}
+
+	if got, want := result["scriptId"], "no-write-all"; got != want {
+		t.Fatalf("scriptId = %v, want %v", got, want)
+	}
+	summary, ok := result["summary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("summary = %#v, want map", result["summary"])
+	}
+	if got, want := summary["findingCount"], float64(2); got != want {
+		t.Fatalf("summary.findingCount = %v, want %v", got, want)
+	}
+	findingsValue, ok := result["findings"].([]interface{})
+	if !ok || len(findingsValue) != 2 {
+		t.Fatalf("findings = %#v, want 2 findings", result["findings"])
+	}
+}
+
+func TestNoWriteAllExamplePrintsHumanReport(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+
+	workflow := `name: CI
+permissions: write-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hi
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "ci.yml"), []byte(workflow), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/no-write-all.js",
+		"--cwd", tempDir,
+		"--workspace", workspace,
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha no-write-all human report failed: %v\n%s", err, string(output))
+	}
+
+	rendered := string(output)
+	for _, needle := range []string{
+		"No Write-All",
+		"no-write-all",
+		".github/workflows/ci.yml",
+		"workflow",
+	} {
+		if !strings.Contains(rendered, needle) {
+			t.Fatalf("human report missing %q:\n%s", needle, rendered)
+		}
+	}
+}
