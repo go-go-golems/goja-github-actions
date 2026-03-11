@@ -17,6 +17,7 @@ type Document struct {
 	TriggerNames  []string          `json:"triggerNames"`
 	Uses          []UsesReference   `json:"uses"`
 	CheckoutSteps []CheckoutStep    `json:"checkoutSteps"`
+	RunSteps      []RunStep         `json:"runSteps"`
 	Permissions   []PermissionEntry `json:"permissions"`
 }
 
@@ -34,6 +35,15 @@ type CheckoutStep struct {
 	Uses               string  `json:"uses"`
 	Line               int     `json:"line"`
 	PersistCredentials *string `json:"persistCredentials"`
+	Ref                *string `json:"ref"`
+	Repository         *string `json:"repository"`
+}
+
+type RunStep struct {
+	JobID    string `json:"jobId"`
+	StepName string `json:"stepName"`
+	Run      string `json:"run"`
+	Line     int    `json:"line"`
 }
 
 type PermissionEntry struct {
@@ -114,7 +124,7 @@ func ParseFile(root string, path string) (Document, error) {
 	document.Name = scalarValue(mappingValue(rootNode, "name"))
 	document.TriggerNames = collectTriggerNames(mappingValue(rootNode, "on"))
 	document.Permissions = append(document.Permissions, collectPermissions(mappingValue(rootNode, "permissions"), "workflow", "")...)
-	document.Uses, document.CheckoutSteps = collectJobData(mappingValue(rootNode, "jobs"))
+	document.Uses, document.CheckoutSteps, document.RunSteps = collectJobData(mappingValue(rootNode, "jobs"))
 
 	jobPermissions := collectJobPermissions(mappingValue(rootNode, "jobs"))
 	document.Permissions = append(document.Permissions, jobPermissions...)
@@ -227,14 +237,15 @@ func collectTriggerNames(node *yaml.Node) []string {
 	}
 }
 
-func collectJobData(node *yaml.Node) ([]UsesReference, []CheckoutStep) {
+func collectJobData(node *yaml.Node) ([]UsesReference, []CheckoutStep, []RunStep) {
 	node = unwrapDocument(node)
 	if node == nil || node.Kind != yaml.MappingNode {
-		return []UsesReference{}, []CheckoutStep{}
+		return []UsesReference{}, []CheckoutStep{}, []RunStep{}
 	}
 
 	uses := []UsesReference{}
 	checkoutSteps := []CheckoutStep{}
+	runSteps := []RunStep{}
 
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		jobID := strings.TrimSpace(node.Content[i].Value)
@@ -267,13 +278,24 @@ func collectJobData(node *yaml.Node) ([]UsesReference, []CheckoutStep) {
 				continue
 			}
 
+			stepName := scalarValue(mappingValue(stepNode, "name"))
+			runNode := mappingValue(stepNode, "run")
+			runValue := scalarValue(runNode)
+			if runValue != "" {
+				runSteps = append(runSteps, RunStep{
+					JobID:    jobID,
+					StepName: stepName,
+					Run:      runValue,
+					Line:     runNode.Line,
+				})
+			}
+
 			specNode := mappingValue(stepNode, "uses")
 			spec := scalarValue(specNode)
 			if spec == "" {
 				continue
 			}
 
-			stepName := scalarValue(mappingValue(stepNode, "name"))
 			reference := UsesReference{
 				Kind:     "step",
 				JobID:    jobID,
@@ -293,24 +315,41 @@ func collectJobData(node *yaml.Node) ([]UsesReference, []CheckoutStep) {
 				Uses:               spec,
 				Line:               specNode.Line,
 				PersistCredentials: persistCredentialsValue(stepNode),
+				Ref:                stepWithValue(stepNode, "ref"),
+				Repository:         stepWithValue(stepNode, "repository"),
 			})
 		}
 	}
 
-	return uses, checkoutSteps
+	return uses, checkoutSteps, runSteps
 }
 
 func persistCredentialsValue(stepNode *yaml.Node) *string {
+	return normalizedOptionalString(stepWithValue(stepNode, "persist-credentials"))
+}
+
+func stepWithValue(stepNode *yaml.Node, key string) *string {
 	withNode := unwrapDocument(mappingValue(stepNode, "with"))
 	if withNode == nil || withNode.Kind != yaml.MappingNode {
 		return nil
 	}
-	valueNode := mappingValue(withNode, "persist-credentials")
+	valueNode := mappingValue(withNode, key)
 	value := scalarValue(valueNode)
 	if value == "" {
 		return nil
 	}
-	ret := strings.ToLower(value)
+	ret := value
+	return &ret
+}
+
+func normalizedOptionalString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	ret := strings.ToLower(strings.TrimSpace(*value))
+	if ret == "" {
+		return nil
+	}
 	return &ret
 }
 

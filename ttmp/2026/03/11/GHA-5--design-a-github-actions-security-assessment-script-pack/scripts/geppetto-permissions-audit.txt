@@ -1,40 +1,52 @@
 GitHub Actions Audit
 ====================
 
-WARN   Inspected go-go-golems/geppetto
+  This audit inspects repository-level GitHub Actions settings including
+  action allowlists, SHA pinning requirements, default workflow token
+  permissions, and pull request approval policies. It reports findings
+  that may increase supply-chain or token-exposure risk.
 
-Repository            go-go-golems/geppetto
+[WARN]  Inspected go-go-golems/geppetto
 
-Workspace             /tmp/geppetto
+  Repository            go-go-golems/geppetto
+  Workspace             /tmp/geppetto
+  Assessment            findings
+  Finding count         2
+  Highest severity      high
+  Allowed actions       all
+  Workflow permissions  read
+  Workflow count        10
 
-Actor                 unknown
-
-Event                 unknown
-
-Assessment            findings
-
-Finding count         2
-
-Highest severity      high
-
-Allowed actions       all
-
-Workflow permissions  read
-
-Workflow count        10
-
-SKIP   selected-actions only applies when allowed_actions == "selected" (got all)
-
-WARN   Runner output file not written: runner output file path is empty
-
-WARN   Step summary file not written: runner summary file path is empty
+[SKIP]  selected-actions only applies when allowed_actions == "selected" (got all)
+[WARN]  Runner output file not written: runner output file path is empty
+[WARN]  Step summary file not written: runner summary file path is empty
 
 Findings
 --------
-Severity  Rule                            Message                                                         
---------  ------------------------------  ----------------------------------------------------------------
-HIGH      allowed-actions-not-restricted  Repository allows all GitHub Actions and reusable workflows.    
-MEDIUM    sha-pinning-not-required        Repository does not require full commit SHA pinning for actions.
+allowed-actions-not-restricted                                  1 x HIGH
+  Repository allows all GitHub Actions and reusable workflows.
+
+  Why it matters
+    Allowing all actions increases supply-chain risk because workflows
+    can consume mutable third-party actions without an allowlist
+    boundary.
+
+  Remediation
+    Prefer `selected` with an explicit allowlist, or `local_only` if
+    the repository only needs local actions.
+    Example: Set repository Actions permissions so `allowed_actions`
+             is `selected` and configure `selected-actions` patterns.
+
+sha-pinning-not-required                                      1 x MEDIUM
+  Repository does not require full commit SHA pinning for actions.
+
+  Why it matters
+    Without SHA pinning requirements, mutable tags such as `@v1` can
+    still be used in workflows.
+
+  Remediation
+    Enable SHA pinning requirements if your policy is to require full
+    commit SHAs for external actions.
 
 Workflows
 ---------
@@ -53,10 +65,10 @@ Dependency Graph     dynamic/dependabot/update-graph
 
 Local workflow files
 --------------------
-- codeql-analysis.yml
-- dependency-scanning.yml
-- lint.yml
-- push.yml
-- release.yml
-- secret-scanning.yml
-- tag-release-notes.yml
+  - codeql-analysis.yml
+  - dependency-scanning.yml
+  - lint.yml
+  - push.yml
+  - release.yml
+  - secret-scanning.yml
+  - tag-release-notes.yml

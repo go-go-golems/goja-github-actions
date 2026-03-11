@@ -84,4 +84,11 @@ module.exports = function () {
 	if !ok || len(checkoutSteps) != 1 {
 		t.Fatalf("checkoutSteps = %#v, want one entry", doc["checkoutSteps"])
 	}
+	if checkoutSteps[0]["persistCredentials"] != "false" {
+		t.Fatalf("persistCredentials = %#v, want false", checkoutSteps[0]["persistCredentials"])
+	}
+	runSteps, ok := doc["runSteps"].([]map[string]interface{})
+	if !ok || len(runSteps) != 0 {
+		t.Fatalf("runSteps = %#v, want empty", doc["runSteps"])
+	}
 }

@@ -7,6 +7,7 @@ SCRIPTS_DIR="$TICKET_DIR/scripts"
 REPO_DIR="${1:-/tmp/geppetto}"
 JSON_OUT="$SCRIPTS_DIR/geppetto-permissions-audit.json"
 REPORT_OUT="$SCRIPTS_DIR/geppetto-permissions-audit.txt"
+PR_TARGET_JSON_OUT="$SCRIPTS_DIR/geppetto-pull-request-target-review.json"
 
 if [[ ! -d "$REPO_DIR" ]]; then
   echo "repository checkout not found: $REPO_DIR" >&2
@@ -32,6 +33,12 @@ GOWORK=off go run ./cmd/goja-gha run \
   --workspace "$REPO_DIR" \
   --event-path ./testdata/events/workflow_dispatch.json >"$REPORT_OUT"
 
+GOWORK=off go run ./cmd/goja-gha run \
+  --script ./examples/pull-request-target-review.js \
+  --cwd "$REPO_DIR" \
+  --workspace "$REPO_DIR" \
+  --json-result >"$PR_TARGET_JSON_OUT"
+
 jq '{
   scriptId,
   repository,
@@ -44,3 +51,12 @@ jq '{
   allowedActions: .permissions.allowed_actions,
   defaultWorkflowPermissions: .workflowPermissions.default_workflow_permissions
 }' "$JSON_OUT"
+
+jq '{
+  scriptId,
+  repository,
+  workspace,
+  reviewedWorkflowCount,
+  summary,
+  findings
+}' "$PR_TARGET_JSON_OUT"

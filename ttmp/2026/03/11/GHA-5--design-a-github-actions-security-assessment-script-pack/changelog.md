@@ -21,3 +21,7 @@
 - Implemented `no-write-all.js` as the third local workflow lint script.
 - Added fixture-style CLI integration coverage for workflow-level and job-level `permissions: write-all`.
 - Validated the write-all rule against `/tmp/geppetto`, which currently passes with zero findings.
+- Extended the Go-native workflow parser so local policy scripts can inspect checkout `ref`, checkout `repository`, and shell `run` steps with line metadata.
+- Implemented `pull-request-target-review.js` as the fourth local workflow lint script.
+- Added fixture-style CLI integration coverage for both a dangerous `pull_request_target` pattern and the human-readable report output.
+- Revalidated `/tmp/geppetto`; the new `pull-request-target-review.js` currently passes with zero findings because no local workflow uses `pull_request_target`.

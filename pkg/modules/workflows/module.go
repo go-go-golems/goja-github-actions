@@ -86,6 +86,7 @@ func documentToMap(doc workflows.Document) map[string]interface{} {
 		"triggerNames":  append([]string(nil), doc.TriggerNames...),
 		"uses":          usesToMaps(doc.Uses),
 		"checkoutSteps": checkoutStepsToMaps(doc.CheckoutSteps),
+		"runSteps":      runStepsToMaps(doc.RunSteps),
 		"permissions":   permissionsToMaps(doc.Permissions),
 	}
 }
@@ -118,7 +119,30 @@ func checkoutStepsToMaps(values []workflows.CheckoutStep) []map[string]interface
 		} else {
 			entry["persistCredentials"] = *value.PersistCredentials
 		}
+		if value.Ref == nil {
+			entry["ref"] = nil
+		} else {
+			entry["ref"] = *value.Ref
+		}
+		if value.Repository == nil {
+			entry["repository"] = nil
+		} else {
+			entry["repository"] = *value.Repository
+		}
 		ret = append(ret, entry)
+	}
+	return ret
+}
+
+func runStepsToMaps(values []workflows.RunStep) []map[string]interface{} {
+	ret := make([]map[string]interface{}, 0, len(values))
+	for _, value := range values {
+		ret = append(ret, map[string]interface{}{
+			"jobId":    value.JobID,
+			"stepName": value.StepName,
+			"run":      value.Run,
+			"line":     value.Line,
+		})
 	}
 	return ret
 }

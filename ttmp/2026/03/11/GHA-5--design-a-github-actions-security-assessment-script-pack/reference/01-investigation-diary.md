@@ -16,6 +16,8 @@ RelatedFiles:
       Note: Third local lint script implemented in Step 6
     - Path: examples/pin-third-party-actions.js
       Note: First local lint script implemented in Step 4
+    - Path: examples/pull-request-target-review.js
+      Note: Fourth local lint rule added in Step 7
     - Path: integration/examples_test.go
       Note: |-
         Integration coverage for the findings-based permissions audit
@@ -24,10 +26,14 @@ RelatedFiles:
       Note: Shared helper introduced during the first implementation slice
     - Path: lib/workspace.js
       Note: Shared workspace helper introduced during the first implementation slice
+    - Path: pkg/workflows/parser.go
+      Note: Parser extended in Step 7 for pull_request_target review
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-permissions-audit.json
       Note: Captured JSON output from the live geppetto validation
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-permissions-audit.txt
       Note: Captured human-readable report output from the live geppetto validation
+    - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-pull-request-target-review.json
+      Note: Live geppetto output captured for the new rule
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh
       Note: Reproducible validation command for the current baseline against /tmp/geppetto
 ExternalSources: []
@@ -36,6 +42,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -593,6 +600,108 @@ The rule is intentionally simple. It does not attempt to infer whether a broad e
 ```json
 {
   "scriptId": "no-write-all",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 0,
+    "highestSeverity": null,
+    "status": "passed"
+  },
+  "findings": []
+}
+```
+
+## Step 7: Implement pull_request_target review on top of the Go-native workflow parser
+
+This step added `pull-request-target-review.js`, the first workflow security rule in GHA-5 that truly depends on the newer Go-native workflow parser rather than just local file discovery. The rule reviews workflows triggered by `pull_request_target`, emits a baseline manual-review finding for each such workflow, and escalates to a critical finding when the workflow checks out pull request head content and then executes shell steps in the same job. That pattern is a classic privileged-untrusted-code boundary failure.
+
+To support the rule cleanly, I extended the parser to expose checkout `with.ref`, checkout `with.repository`, and `run` steps with job and line metadata. That kept the JavaScript rule focused on policy decisions instead of reverting to YAML string matching. This was the right tradeoff: `pull_request_target` is exactly the kind of rule that becomes unreadable if the parser boundary is weak.
+
+### Prompt Context
+
+**User prompt (verbatim):** "go ahead. continue"
+
+**Assistant interpretation:** Keep working through the `GHA-5` backlog and pick the next high-value security script rather than stopping after the parser ticket.
+
+**Inferred user intent:** Use the new parser foundation immediately on a more security-significant rule, not just on formatting or low-risk cleanup.
+
+### What I did
+
+- Extended the parser in:
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/workflows/parser.go`
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/modules/workflows/module.go`
+- Added parser and module coverage in:
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/workflows/parser_test.go`
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/modules/workflows/module_test.go`
+- Added `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/pull-request-target-review.js`.
+- Added CLI integration coverage in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go` for:
+  - a dangerous `pull_request_target` workflow that checks out PR head content and then runs shell commands,
+  - the human-readable report output.
+- Updated the ticket validation harness `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh`.
+- Captured `/tmp/geppetto` output in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-pull-request-target-review.json`.
+
+### Why
+
+- `pull_request_target` is one of the highest-signal GitHub Actions security review targets.
+- The new parser needed to prove it could support more semantic rules, not just the earlier pinning and permission checks.
+
+### What worked
+
+- The parser extension was enough to keep the JS rule small and readable.
+- The integration fixture successfully distinguishes a dangerous pattern with:
+  - `pull_request_target`
+  - checkout `ref` from `github.event.pull_request.head.sha`
+  - checkout `repository` from `github.event.pull_request.head.repo.full_name`
+  - a later shell `run:` step
+- `/tmp/geppetto` currently has no `pull_request_target` workflows, so the live script returns a clean pass.
+
+### What didn't work
+
+- The initial parser surface did not expose checkout `ref`, checkout `repository`, or shell `run` steps, so the rule could not be written cleanly until those fields were added.
+
+### What I learned
+
+- The transition point from “simple text scan” to “needs structured workflow semantics” happens quickly once trust-boundary rules enter the picture.
+- `pull_request_target` review is a good demonstration of why the Go-native parser belongs in the stack.
+
+### What was tricky to build
+
+- The main challenge was choosing a rule boundary that is strong but not noisy. A plain “workflow uses pull_request_target” finding is useful as a review hint, but the truly dangerous case is when the workflow also checks out PR head content and executes shell commands. The final rule reports both: a medium review finding for the trigger itself and a critical finding for the explicit untrusted-checkout-plus-execution pattern.
+
+### What warrants a second pair of eyes
+
+- The severity calibration for `pull-request-target-untrusted-checkout`.
+- Whether later versions should also flag expression-bearing `run:` steps that interpolate PR-controlled data even without checkout.
+
+### What should be done in the future
+
+- Implement `workflow-run-review.js` next.
+- Consider a second rule dedicated specifically to privileged checkout patterns once more trust-label infrastructure exists.
+
+### Code review instructions
+
+- Start with `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/pull-request-target-review.js`.
+- Then inspect the parser additions in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/workflows/parser.go`.
+- Finally run:
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && GOWORK=off go test ./pkg/workflows ./pkg/modules/workflows ./integration`
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh`
+
+### Technical details
+
+- Validation commands:
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && GOWORK=off go test ./...`
+  - `source .envrc && GOWORK=off go run ./cmd/goja-gha run --script ./examples/pull-request-target-review.js --cwd /tmp --workspace /tmp/geppetto --json-result | jq '{scriptId, reviewedWorkflowCount, summary, findings}'`
+- Live `/tmp/geppetto` result:
+
+```json
+{
+  "scriptId": "pull-request-target-review",
+  "reviewedWorkflowCount": 0,
   "summary": {
     "counts": {
       "critical": 0,

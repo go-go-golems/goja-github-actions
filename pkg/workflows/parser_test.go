@@ -27,6 +27,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Test
+        run: go test ./...
       - name: Lint
         uses: golangci/golangci-lint-action@v8
   reusable:
@@ -69,8 +75,20 @@ jobs:
 	if len(doc.CheckoutSteps) != 1 {
 		t.Fatalf("len(CheckoutSteps) = %d, want 1", len(doc.CheckoutSteps))
 	}
-	if doc.CheckoutSteps[0].PersistCredentials != nil {
-		t.Fatalf("PersistCredentials = %#v, want nil", doc.CheckoutSteps[0].PersistCredentials)
+	if doc.CheckoutSteps[0].PersistCredentials == nil || *doc.CheckoutSteps[0].PersistCredentials != "false" {
+		t.Fatalf("PersistCredentials = %#v, want false", doc.CheckoutSteps[0].PersistCredentials)
+	}
+	if doc.CheckoutSteps[0].Ref == nil || *doc.CheckoutSteps[0].Ref != "${{ github.event.pull_request.head.sha }}" {
+		t.Fatalf("Ref = %#v, want github.event.pull_request.head.sha", doc.CheckoutSteps[0].Ref)
+	}
+	if doc.CheckoutSteps[0].Repository == nil || *doc.CheckoutSteps[0].Repository != "${{ github.event.pull_request.head.repo.full_name }}" {
+		t.Fatalf("Repository = %#v, want github.event.pull_request.head.repo.full_name", doc.CheckoutSteps[0].Repository)
+	}
+	if len(doc.RunSteps) != 1 {
+		t.Fatalf("len(RunSteps) = %d, want 1", len(doc.RunSteps))
+	}
+	if doc.RunSteps[0].JobID != "build" || doc.RunSteps[0].Run != "go test ./..." {
+		t.Fatalf("RunSteps[0] = %#v, want build/go test ./...", doc.RunSteps[0])
 	}
 	if len(doc.Permissions) != 2 {
 		t.Fatalf("len(Permissions) = %d, want 2", len(doc.Permissions))

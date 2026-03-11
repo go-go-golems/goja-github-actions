@@ -21,18 +21,18 @@
 - [x] Implement `pin-third-party-actions.js`.
 - [x] Implement `checkout-persist-creds.js`.
 - [x] Implement `no-write-all.js`.
-- [ ] Implement `pull-request-target-review.js`.
+- [x] Implement `pull-request-target-review.js`.
 - [ ] Implement `workflow-run-review.js`.
 - [ ] Add fixture workflows covering safe and unsafe patterns for each script.
 - [ ] Add CLI integration tests for each new script.
 
 ## Phase 3: Introduce shared helpers
 
-- [ ] Add a shared workflow file discovery helper for scripts.
+- [x] Add a shared workflow file discovery helper for scripts.
 - [x] Add a shared finding/result builder helper.
 - [ ] Add a shared report renderer helper built on `@goja-gha/ui`.
-- [ ] Decide whether YAML parsing should remain JS-side or move into a Go-native helper module.
-- [ ] If needed, add a native workflow/YAML helper module.
+- [x] Decide whether YAML parsing should remain JS-side or move into a Go-native helper module.
+- [x] If needed, add a native workflow/YAML helper module.
 
 ## Phase 4: Settings policy specialization
 
@@ -54,7 +54,7 @@
 
 - [x] Run the baseline validation script against `/tmp/geppetto` and capture JSON and report outputs in the ticket `scripts/` directory.
 - [x] Keep `/tmp/geppetto` as a live smoke target for the baseline audit and future lint scripts.
-- [ ] Validate the first lint scripts against fixture repos and a real repo checkout.
+- [x] Validate the first lint scripts against fixture repos and a real repo checkout.
 - [ ] Document required token scopes for each API-backed script.
 - [ ] Add user-facing help/docs once the first three or four scripts exist.
 - [ ] Decide when to move scripts from `examples/` into a dedicated `policies/` directory.
@@ -62,6 +62,6 @@
 ## Exit criteria for the first useful release
 
 - [x] Repository settings audit returns structured findings and a readable report.
-- [ ] At least three local workflow lint scripts exist and pass fixture-based tests.
+- [x] At least three local workflow lint scripts exist and pass fixture-based tests.
 - [ ] Scripts share a consistent JSON result contract.
 - [ ] A new engineer can run the scripts against `/tmp/geppetto` without guessing hidden prerequisites.
