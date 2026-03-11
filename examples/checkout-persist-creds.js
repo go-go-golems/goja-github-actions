@@ -117,6 +117,12 @@ function collectFindings(workflowFiles, workspace) {
 function renderReport(result) {
   const overallStatus = result.summary.status === "passed" ? "ok" : "warn";
   const report = ui.report("Checkout Persist Credentials")
+    .description(
+      "This audit checks that every actions/checkout step in your workflow files " +
+      "explicitly sets persist-credentials: false. Without this, the GITHUB_TOKEN " +
+      "remains on disk in the runner's git config, making credential exfiltration " +
+      "easier if any subsequent step is compromised."
+    )
     .status(overallStatus, `Inspected ${result.repository || result.workspace}`)
     .kv("Workspace", result.workspace)
     .kv("Workflow files", String(result.workflowFiles.length))
@@ -129,15 +135,8 @@ function renderReport(result) {
       return;
     }
 
-    section.table({
-      columns: ["Severity", "Rule", "Path", "Line", "Uses"],
-      rows: result.findings.map((finding) => [
-        findings.severityLabel(finding.severity),
-        finding.ruleId,
-        finding.evidence.path || "",
-        String(finding.evidence.line || ""),
-        finding.evidence.uses || ""
-      ])
+    section.findings(result.findings, {
+      locationFields: ["path", "line", "uses"]
     });
   });
 

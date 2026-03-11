@@ -62,6 +62,27 @@ type sectionBlock struct {
 	Blocks []reportBlock
 }
 
+type findingsBlock struct {
+	Groups         []findingGroup
+	LocationFields []string
+}
+
+type findingGroup struct {
+	RuleID       string
+	Severity     string
+	Message      string
+	WhyItMatters string
+	Remediation  string
+	Example      string
+	Locations    []findingLocation
+}
+
+type findingLocation struct {
+	Path string
+	Line string
+	Hint string
+}
+
 type tableOptions struct {
 	Columns []string   `json:"columns"`
 	Rows    [][]string `json:"rows"`
@@ -72,6 +93,7 @@ func (kvBlock) reportBlock()      {}
 func (listBlock) reportBlock()    {}
 func (tableBlock) reportBlock()   {}
 func (sectionBlock) reportBlock() {}
+func (findingsBlock) reportBlock() {}
 
 func NewDependencies(settings *gharuntime.Settings) *Dependencies {
 	return &Dependencies{
@@ -265,6 +287,11 @@ func (m *Module) newSectionObject(blocks *[]reportBlock) *goja.Object {
 		callSectionCallback(m.vm, callback, nestedObject)
 		return sectionObject
 	}))
+	m.must(sectionObject.Set("findings", func(call goja.FunctionCall) goja.Value {
+		fb := exportFindingsBlock(m.vm, call)
+		appendBlock(fb)
+		return sectionObject
+	}))
 
 	return sectionObject
 }
@@ -350,6 +377,8 @@ func renderBlocks(buffer *bytes.Buffer, blocks []reportBlock, color bool) {
 			if len(typed.Blocks) > 0 {
 				renderBlocks(buffer, typed.Blocks, color)
 			}
+		case findingsBlock:
+			renderFindings(buffer, typed, color)
 		}
 		if i != len(blocks)-1 && !sameBlockType(block, blocks[i+1]) {
 			writeLine(buffer, "")
@@ -596,6 +625,292 @@ func callSectionCallback(vm *goja.Runtime, callback goja.Value, sectionObject *g
 	}
 	if _, err := callable(goja.Undefined(), sectionObject); err != nil {
 		panic(err)
+	}
+}
+
+func exportFindingsBlock(vm *goja.Runtime, call goja.FunctionCall) findingsBlock {
+	fb := findingsBlock{}
+	if len(call.Arguments) == 0 {
+		return fb
+	}
+
+	findingsValue := call.Argument(0)
+	if findingsValue == nil || goja.IsUndefined(findingsValue) || goja.IsNull(findingsValue) {
+		return fb
+	}
+
+	// Parse options (second argument)
+	locationFields := []string{"path", "line", "uses"}
+	if len(call.Arguments) > 1 {
+		optsValue := call.Argument(1)
+		if optsValue != nil && !goja.IsUndefined(optsValue) && !goja.IsNull(optsValue) {
+			optsObj := optsValue.ToObject(vm)
+			if optsObj != nil {
+				if lf := optsObj.Get("locationFields"); lf != nil && !goja.IsUndefined(lf) {
+					locationFields = exportStringSlice(lf)
+				}
+			}
+		}
+	}
+	fb.LocationFields = locationFields
+
+	// Extract findings array into groups keyed by ruleId
+	findingsObj := findingsValue.ToObject(vm)
+	if findingsObj == nil {
+		return fb
+	}
+
+	type rawFinding struct {
+		ruleID       string
+		severity     string
+		message      string
+		whyItMatters string
+		remediation  string
+		example      string
+		evidence     map[string]string
+	}
+
+	groupOrder := []string{}
+	groupMap := map[string][]rawFinding{}
+
+	for _, key := range findingsObj.Keys() {
+		item := findingsObj.Get(key)
+		if item == nil || goja.IsUndefined(item) || goja.IsNull(item) {
+			continue
+		}
+		obj := item.ToObject(vm)
+		if obj == nil {
+			continue
+		}
+
+		rf := rawFinding{
+			ruleID:       getStringField(obj, "ruleId"),
+			severity:     getStringField(obj, "severity"),
+			message:      getStringField(obj, "message"),
+			whyItMatters: getStringField(obj, "whyItMatters"),
+			evidence:     map[string]string{},
+		}
+
+		// Extract remediation
+		remValue := obj.Get("remediation")
+		if remValue != nil && !goja.IsUndefined(remValue) && !goja.IsNull(remValue) {
+			remObj := remValue.ToObject(vm)
+			if remObj != nil {
+				rf.remediation = getStringField(remObj, "summary")
+				rf.example = getStringField(remObj, "example")
+			}
+		}
+
+		// Extract evidence fields
+		evValue := obj.Get("evidence")
+		if evValue != nil && !goja.IsUndefined(evValue) && !goja.IsNull(evValue) {
+			evObj := evValue.ToObject(vm)
+			if evObj != nil {
+				for _, field := range locationFields {
+					val := evObj.Get(field)
+					if val != nil && !goja.IsUndefined(val) && !goja.IsNull(val) {
+						rf.evidence[field] = stringifyValue(val)
+					}
+				}
+			}
+		}
+
+		if _, exists := groupMap[rf.ruleID]; !exists {
+			groupOrder = append(groupOrder, rf.ruleID)
+		}
+		groupMap[rf.ruleID] = append(groupMap[rf.ruleID], rf)
+	}
+
+	// Build finding groups in order
+	for _, ruleID := range groupOrder {
+		findings := groupMap[ruleID]
+		if len(findings) == 0 {
+			continue
+		}
+		first := findings[0]
+		group := findingGroup{
+			RuleID:       ruleID,
+			Severity:     strings.ToUpper(first.severity),
+			Message:      first.message,
+			WhyItMatters: first.whyItMatters,
+			Remediation:  first.remediation,
+			Example:      first.example,
+		}
+
+		for _, f := range findings {
+			loc := findingLocation{}
+			if v, ok := f.evidence["path"]; ok {
+				loc.Path = v
+			}
+			if v, ok := f.evidence["line"]; ok {
+				loc.Line = v
+			}
+			// Build hint from remaining location fields (excluding path and line)
+			var hintParts []string
+			for _, field := range locationFields {
+				if field == "path" || field == "line" {
+					continue
+				}
+				if v, ok := f.evidence[field]; ok && v != "" {
+					hintParts = append(hintParts, v)
+				}
+			}
+			if len(hintParts) > 0 {
+				loc.Hint = strings.Join(hintParts, "  ")
+			}
+			group.Locations = append(group.Locations, loc)
+		}
+
+		fb.Groups = append(fb.Groups, group)
+	}
+
+	return fb
+}
+
+func getStringField(obj *goja.Object, field string) string {
+	val := obj.Get(field)
+	if val == nil || goja.IsUndefined(val) || goja.IsNull(val) {
+		return ""
+	}
+	return strings.TrimSpace(val.String())
+}
+
+func renderFindings(buffer *bytes.Buffer, fb findingsBlock, color bool) {
+	for i, group := range fb.Groups {
+		// Header: ruleId + count x SEVERITY
+		countLabel := fmt.Sprintf("%d x %s", len(group.Locations), group.Severity)
+		if color {
+			countLabel = fmt.Sprintf("%d x %s", len(group.Locations), styleSeverity(group.Severity, color))
+		}
+		header := group.RuleID
+		if color {
+			header = ansi("1", header)
+		}
+		// Right-align count on ~72-char line
+		padding := 72 - len(group.RuleID) - len(fmt.Sprintf("%d x %s", len(group.Locations), group.Severity))
+		if padding < 2 {
+			padding = 2
+		}
+		writeLine(buffer, header+strings.Repeat(" ", padding)+countLabel)
+
+		// Message
+		writeLine(buffer, "  "+group.Message)
+
+		// Why it matters
+		if group.WhyItMatters != "" {
+			writeLine(buffer, "")
+			label := "Why it matters"
+			if color {
+				label = ansi("2", label)
+			}
+			writeLine(buffer, "  "+label)
+			for _, line := range wordWrap(group.WhyItMatters, 66) {
+				writeLine(buffer, "    "+line)
+			}
+		}
+
+		// Remediation
+		if group.Remediation != "" {
+			writeLine(buffer, "")
+			label := "Remediation"
+			if color {
+				label = ansi("2", label)
+			}
+			writeLine(buffer, "  "+label)
+			for _, line := range wordWrap(group.Remediation, 66) {
+				writeLine(buffer, "    "+line)
+			}
+			if group.Example != "" {
+				writeLine(buffer, "    Example: "+group.Example)
+			}
+		}
+
+		// Locations grouped by path
+		if len(group.Locations) > 0 && hasLocationDetail(group.Locations) {
+			writeLine(buffer, "")
+			label := "Locations"
+			if color {
+				label = ansi("2", label)
+			}
+			writeLine(buffer, "  "+label)
+			renderGroupedLocations(buffer, group.Locations)
+		}
+
+		if i < len(fb.Groups)-1 {
+			writeLine(buffer, "")
+		}
+	}
+}
+
+func hasLocationDetail(locs []findingLocation) bool {
+	for _, loc := range locs {
+		if loc.Path != "" || loc.Line != "" || loc.Hint != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func renderGroupedLocations(buffer *bytes.Buffer, locations []findingLocation) {
+	// Group by path
+	type pathGroup struct {
+		path      string
+		locations []findingLocation
+	}
+	var groups []pathGroup
+	groupIndex := map[string]int{}
+
+	for _, loc := range locations {
+		path := loc.Path
+		if path == "" {
+			path = "(no path)"
+		}
+		idx, exists := groupIndex[path]
+		if !exists {
+			idx = len(groups)
+			groups = append(groups, pathGroup{path: path})
+			groupIndex[path] = idx
+		}
+		groups[idx].locations = append(groups[idx].locations, loc)
+	}
+
+	for _, pg := range groups {
+		if len(groups) > 1 || pg.path != "(no path)" {
+			writeLine(buffer, "    "+pg.path)
+		}
+		for _, loc := range pg.locations {
+			line := loc.Line
+			if line == "" {
+				line = "-"
+			}
+			hint := ""
+			if loc.Hint != "" {
+				hint = "  " + loc.Hint
+			}
+			if len(groups) > 1 || pg.path != "(no path)" {
+				writeLine(buffer, fmt.Sprintf("       :%s%s", line, hint))
+			} else {
+				writeLine(buffer, fmt.Sprintf("    :%s%s", line, hint))
+			}
+		}
+	}
+}
+
+func styleSeverity(severity string, color bool) string {
+	if !color {
+		return severity
+	}
+	switch strings.ToUpper(severity) {
+	case "CRITICAL":
+		return ansi("1;31", severity)
+	case "HIGH":
+		return ansi("1;31", severity)
+	case "MEDIUM":
+		return ansi("1;33", severity)
+	case "LOW":
+		return ansi("1;34", severity)
+	default:
+		return ansi("2", severity)
 	}
 }
 

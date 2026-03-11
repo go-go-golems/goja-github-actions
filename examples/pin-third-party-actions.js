@@ -86,6 +86,12 @@ function collectFindings(workflowFiles, workspace) {
 function renderReport(result) {
   const overallStatus = result.summary.status === "passed" ? "ok" : "warn";
   const report = ui.report("Pin Third-Party Actions")
+    .description(
+      "This audit checks that all third-party GitHub Actions and reusable " +
+      "workflows are pinned to full commit SHAs rather than mutable tags or " +
+      "branch names. Mutable refs can change without notice, which increases " +
+      "supply-chain risk."
+    )
     .status(overallStatus, `Inspected ${result.repository || result.workspace}`)
     .kv("Workspace", result.workspace)
     .kv("Workflow files", String(result.workflowFiles.length))
@@ -98,15 +104,8 @@ function renderReport(result) {
       return;
     }
 
-    section.table({
-      columns: ["Severity", "Rule", "Path", "Line", "Uses"],
-      rows: result.findings.map((finding) => [
-        findings.severityLabel(finding.severity),
-        finding.ruleId,
-        finding.evidence.path || "",
-        String(finding.evidence.line || ""),
-        finding.evidence.uses || ""
-      ])
+    section.findings(result.findings, {
+      locationFields: ["path", "line", "uses"]
     });
   });
 

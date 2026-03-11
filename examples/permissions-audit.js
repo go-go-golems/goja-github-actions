@@ -148,11 +148,15 @@ function renderAuditReport(result) {
       : "info";
 
   const report = ui.report("GitHub Actions Audit")
+    .description(
+      "This audit inspects repository-level GitHub Actions settings including " +
+      "action allowlists, SHA pinning requirements, default workflow token " +
+      "permissions, and pull request approval policies. It reports findings " +
+      "that may increase supply-chain or token-exposure risk."
+    )
     .status(overallStatus, `Inspected ${result.repository}`)
     .kv("Repository", result.repository)
     .kv("Workspace", result.workspace || "unknown")
-    .kv("Actor", result.actor || "unknown")
-    .kv("Event", result.eventName || "unknown")
     .kv("Assessment", result.summary.status)
     .kv("Finding count", String(result.summary.findingCount))
     .kv("Highest severity", result.summary.highestSeverity || "none")
@@ -182,14 +186,7 @@ function renderAuditReport(result) {
       return;
     }
 
-    section.table({
-      columns: ["Severity", "Rule", "Message"],
-      rows: result.findings.map((finding) => [
-        findings.severityLabel(finding.severity),
-        finding.ruleId,
-        finding.message
-      ])
-    });
+    section.findings(result.findings);
   });
 
   report.section("Workflows", (section) => {

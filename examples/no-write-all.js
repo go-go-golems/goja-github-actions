@@ -84,6 +84,12 @@ function collectFindings(workflowFiles, workspace) {
 function renderReport(result) {
   const overallStatus = result.summary.status === "passed" ? "ok" : "warn";
   const report = ui.report("No Write-All")
+    .description(
+      "This audit checks that no workflow or job in your repository uses the " +
+      "overly broad permissions: write-all setting. Broad write-all permissions " +
+      "give every permission category write access, increasing the blast radius " +
+      "of compromised workflow execution."
+    )
     .status(overallStatus, `Inspected ${result.repository || result.workspace}`)
     .kv("Workspace", result.workspace)
     .kv("Workflow files", String(result.workflowFiles.length))
@@ -96,15 +102,8 @@ function renderReport(result) {
       return;
     }
 
-    section.table({
-      columns: ["Severity", "Rule", "Path", "Line", "Scope"],
-      rows: result.findings.map((finding) => [
-        findings.severityLabel(finding.severity),
-        finding.ruleId,
-        finding.evidence.path || "",
-        String(finding.evidence.line || ""),
-        finding.evidence.scope || ""
-      ])
+    section.findings(result.findings, {
+      locationFields: ["path", "line", "scope"]
     });
   });
 
