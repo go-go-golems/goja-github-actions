@@ -5,6 +5,7 @@ all: gifs
 VERSION=v0.1.14
 GORELEASER_ARGS ?= --skip=sign --snapshot --clean
 GORELEASER_TARGET ?= --single-target
+BINARY_NAME ?= goja-gha
 
 TAPES=$(wildcard doc/vhs/*tape)
 gifs: $(TAPES)
@@ -48,14 +49,13 @@ tag-patch:
 
 release:
 	git push origin --tags
-	GOWORK=off GOPROXY=proxy.golang.org go list -m github.com/go-go-golems/XXX@$(shell svu current)
+	GOWORK=off GOPROXY=proxy.golang.org go list -m github.com/go-go-golems/goja-github-actions@$(shell svu current)
 
 bump-glazed:
 	GOWORK=off go get github.com/go-go-golems/glazed@latest
 	GOWORK=off go get github.com/go-go-golems/clay@latest
 	GOWORK=off go mod tidy
 
-XXX_BINARY=$(shell which XXX)
 install:
-	GOWORK=off go build -o ./dist/XXX ./cmd/XXX && \
-		cp ./dist/XXX $(XXX_BINARY)
+	mkdir -p ./dist
+	GOWORK=off go build -o ./dist/$(BINARY_NAME) ./cmd/goja-gha
