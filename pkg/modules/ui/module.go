@@ -29,8 +29,9 @@ type Module struct {
 }
 
 type reportBuilder struct {
-	title  string
-	blocks []reportBlock
+	title       string
+	description string
+	blocks      []reportBlock
 }
 
 type reportBlock interface {
@@ -110,6 +111,10 @@ func (m *Module) report(title string) goja.Value {
 func (m *Module) newReportObject(report *reportBuilder) *goja.Object {
 	reportObject := m.vm.NewObject()
 
+	m.must(reportObject.Set("description", func(text string) *goja.Object {
+		report.description = strings.TrimSpace(text)
+		return reportObject
+	}))
 	m.must(reportObject.Set("status", func(call goja.FunctionCall) goja.Value {
 		kind := ""
 		text := ""
@@ -303,6 +308,13 @@ func renderTextReport(report *reportBuilder, color bool) string {
 		writeLine(&buffer, "")
 	}
 
+	if report.description != "" {
+		for _, line := range wordWrap(report.description, 70) {
+			writeLine(&buffer, "  "+line)
+		}
+		writeLine(&buffer, "")
+	}
+
 	renderBlocks(&buffer, report.blocks, color)
 
 	return strings.TrimRight(buffer.String(), "\n") + "\n"
@@ -323,10 +335,10 @@ func renderBlocks(buffer *bytes.Buffer, blocks []reportBlock, color bool) {
 			if label == "" {
 				label = "Value"
 			}
-			writeLine(buffer, fmt.Sprintf("%-*s  %s", kvWidth, label, typed.Value))
+			writeLine(buffer, fmt.Sprintf("  %-*s  %s", kvWidth, label, typed.Value))
 		case listBlock:
 			for _, item := range typed.Items {
-				writeLine(buffer, "- "+item)
+				writeLine(buffer, "  - "+item)
 			}
 		case tableBlock:
 			renderTable(buffer, typed, color)
@@ -339,9 +351,22 @@ func renderBlocks(buffer *bytes.Buffer, blocks []reportBlock, color bool) {
 				renderBlocks(buffer, typed.Blocks, color)
 			}
 		}
-		if i != len(blocks)-1 {
+		if i != len(blocks)-1 && !sameBlockType(block, blocks[i+1]) {
 			writeLine(buffer, "")
 		}
+	}
+}
+
+func sameBlockType(a, b reportBlock) bool {
+	switch a.(type) {
+	case kvBlock:
+		_, ok := b.(kvBlock)
+		return ok
+	case statusBlock:
+		_, ok := b.(statusBlock)
+		return ok
+	default:
+		return false
 	}
 }
 
@@ -427,15 +452,25 @@ func styleSectionHeading(text string, color bool) string {
 }
 
 func styleStatusLabel(kind string, color bool) string {
-	label := strings.ToUpper(normalizeStatus(kind))
-	if len(label) < 5 {
-		label += strings.Repeat(" ", 5-len(label))
+	normalized := normalizeStatus(kind)
+	var label string
+	switch normalized {
+	case "ok":
+		label = "[ OK ]"
+	case "warn":
+		label = "[WARN]"
+	case "error":
+		label = "[ERR ]"
+	case "skip":
+		label = "[SKIP]"
+	default:
+		label = "[INFO]"
 	}
 	if !color {
 		return label
 	}
 
-	switch normalizeStatus(kind) {
+	switch normalized {
 	case "ok":
 		return ansi("1;32", label)
 	case "warn":
@@ -562,6 +597,29 @@ func callSectionCallback(vm *goja.Runtime, callback goja.Value, sectionObject *g
 	if _, err := callable(goja.Undefined(), sectionObject); err != nil {
 		panic(err)
 	}
+}
+
+func wordWrap(text string, width int) []string {
+	if width <= 0 {
+		width = 70
+	}
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return nil
+	}
+
+	var lines []string
+	current := words[0]
+	for _, word := range words[1:] {
+		if len(current)+1+len(word) > width {
+			lines = append(lines, current)
+			current = word
+		} else {
+			current += " " + word
+		}
+	}
+	lines = append(lines, current)
+	return lines
 }
 
 func (m *Module) must(err error) {
