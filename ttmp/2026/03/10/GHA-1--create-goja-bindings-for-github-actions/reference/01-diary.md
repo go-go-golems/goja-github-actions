@@ -1,7 +1,7 @@
 ---
 Title: Diary
 Ticket: GHA-1
-Status: active
+Status: completed
 Topics:
     - goja
     - github-actions
@@ -10,34 +10,43 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
-    - Path: go-go-goja/engine/factory.go
+    - Path: ../../../../../../../go-go-goja/engine/factory.go
       Note: Inspected to anchor runtime composition claims recorded in the diary
-    - Path: go-go-goja/pkg/runtimeowner/runner.go
+    - Path: ../../../../../../../go-go-goja/pkg/runtimeowner/runner.go
       Note: Inspected to anchor async owner-thread notes recorded in the diary
-    - Path: goja-git/gitmodule.go
+    - Path: ../../../../../../../goja-git/gitmodule.go
       Note: Inspected as the JS API precedent discussed in the diary
-    - Path: goja-github-actions/cmd/goja-gha/cmds/doctor.go
+    - Path: action.yml
+      Note: Composite action delivery path recorded in Step 3 (commit 7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99)
+    - Path: cmd/goja-gha/cmds/doctor.go
       Note: |-
         Bootstrap inspection command used to validate the schema split
         Bootstrap doctor command and schema inspection output (commit 20ba7667d1151b588a63eba38d4ea25ea029a78b)
-    - Path: goja-github-actions/cmd/goja-gha/cmds/root.go
+    - Path: cmd/goja-gha/cmds/root.go
       Note: Bootstrap root command and short-help section wiring (commit 20ba7667d1151b588a63eba38d4ea25ea029a78b)
-    - Path: goja-github-actions/cmd/goja-gha/cmds/run.go
+    - Path: cmd/goja-gha/cmds/run.go
       Note: |-
         First bootstrap command and the main entrypoint for the current implementation step
         Bootstrap run command and dual-section decoding (commit 20ba7667d1151b588a63eba38d4ea25ea029a78b)
-    - Path: goja-github-actions/pkg/cli/github_actions.go
+    - Path: integration/examples_test.go
+      Note: Fake GitHub API and CLI integration validation recorded in Step 3 (commit 7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99)
+    - Path: pkg/cli/github_actions.go
       Note: |-
         Current schema boundary between shared GitHub settings and runner-specific flags
         Schema split between shared GitHub settings and runner flags (commit 20ba7667d1151b588a63eba38d4ea25ea029a78b)
-    - Path: goja-github-actions/ttmp/2026/03/10/GHA-1--create-goja-bindings-for-github-actions/sources/local/01-imported-planning-notes.md
+    - Path: pkg/modules/exec/module.go
+      Note: Owner-thread promise settlement and exec option decoding recorded in Step 3 (commit 7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99)
+    - Path: pkg/runtime/script_runner.go
+      Note: Async entrypoint execution and promise awaiting recorded in Step 3 (commit 7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99)
+    - Path: ttmp/2026/03/10/GHA-1--create-goja-bindings-for-github-actions/sources/local/01-imported-planning-notes.md
       Note: Imported source that shaped the first target use case
 ExternalSources: []
-Summary: Chronological record of the ticket setup, bootstrap CLI implementation, and design updates for goja-gha.
-LastUpdated: 2026-03-10T22:13:00-04:00
-WhatFor: Preserve the commands, decisions, evidence, and commit trail used to move goja-gha from design packet to bootstrap implementation.
-WhenToUse: Use when continuing the ticket, reviewing the research trail, or validating the design and bootstrap CLI against the inspected code and docs.
+Summary: Chronological record of the ticket setup, bootstrap CLI implementation, and full runtime/module delivery for goja-gha.
+LastUpdated: 2026-03-10T23:40:00-04:00
+WhatFor: Preserve the commands, decisions, evidence, failure/recovery trail, and commit history used to move goja-gha from design packet to completed implementation.
+WhenToUse: Use when reviewing the research trail, understanding the implementation sequence, or validating the delivered runtime and modules against the code and docs.
 ---
+
 
 
 
@@ -266,3 +275,143 @@ The user then corrected an architectural detail in the schema design: the custom
   - `run --help` now shows runner flags under `Flags` and shared GitHub fields under `Shared GitHub settings`.
   - `doctor --output json` reports both decoded sections in one merged row.
   - `doctor --print-schema` currently reflects the default-section runner fields; the shared GitHub section remains visible through normal command help.
+
+## Step 3: Finish the runtime, native modules, examples, and delivery path
+
+This step turned the ticket into a working tool instead of an architecture packet. I implemented the remaining runtime, runner-file, and native-module slices; added example scripts and CLI integration tests; added a composite action wrapper and CI workflow; and committed the implementation as `7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99`.
+
+The shape of the work followed the design packet closely, but several details only became clear once the end-to-end examples were running. The most important practical lesson was that Goja-facing JS objects must be normalized deliberately: plain Go structs do not automatically surface lower-case JavaScript properties the way the examples expect, and that showed up repeatedly in `github.context`, GitHub API responses, and `@actions/exec` results.
+
+### Prompt Context
+
+**User prompt (verbatim):** "continue, don't stop until the whole ticket is done."
+
+**Assistant interpretation:** Complete the remaining implementation work end to end, including runtime execution, native modules, examples, packaging, tests, diary updates, and commits, rather than stopping after the next slice.
+
+**Inferred user intent:** Finish the ticket as a delivered system, not just a plan, and preserve enough detail in the documentation that someone else can review or continue the work without reconstructing the full debugging trail.
+
+**Commit (code):** `7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99` — "Implement goja-gha runtime and action modules"
+
+### What I did
+
+- Implemented Glazed precedence and validation in:
+  - `pkg/cli/defaults.go`
+  - `pkg/cli/middleware.go`
+  - `pkg/cli/settings.go`
+  - `pkg/cli/middleware_test.go`
+- Implemented the runtime factory and owner-thread binding layer in:
+  - `pkg/runtime/bindings.go`
+  - `pkg/runtime/factory.go`
+  - `pkg/runtime/globals.go`
+  - `pkg/runtime/script_runner.go`
+  - `pkg/runtime/script_runner_test.go`
+- Added runner command-file helpers in `pkg/runnerfiles/...`.
+- Implemented `@actions/core`, `@actions/github`, `@actions/io`, and `@actions/exec` under `pkg/modules/...`.
+- Added GitHub API helpers and tests in `pkg/githubapi/...`.
+- Wired the runtime modules into `cmd/goja-gha/cmds/run.go`.
+- Added example scripts:
+  - `examples/trivial.js`
+  - `examples/core-primitives.js`
+  - `examples/set-output.js`
+  - `examples/permissions-audit.js`
+  - `examples/list-workflows.js`
+- Added fixture data and end-to-end CLI integration tests in:
+  - `testdata/events/workflow_dispatch.json`
+  - `integration/examples_test.go`
+- Added packaging/delivery artifacts:
+  - `action.yml`
+  - `.github/workflows/ci.yml`
+- Updated the repo README to document the implemented usage rather than the earlier bootstrap state.
+- Validated with:
+  - `GOWORK=off go test ./...`
+  - `GOWORK=off go build ./...`
+  - `GOWORK=off go run ./cmd/goja-gha run --script ./examples/trivial.js --json-result`
+  - `GOWORK=off INPUT_NAME='Manuel' GITHUB_OUTPUT=... GITHUB_STEP_SUMMARY=... go run ./cmd/goja-gha run --script ./examples/set-output.js --json-result`
+
+### Why
+
+- The ticket was originally framed around a concrete GitHub Actions permissions/workflow audit use case, so stopping at the CLI scaffold would have left the hardest and most valuable work undone.
+- The `go-go-goja` runtime-owner model only pays off if the modules that need asynchronous settlement, especially `@actions/exec`, are actually built and validated against it.
+- The examples and integration tests were necessary to prove that the design packet described a real system rather than just a plausible one.
+
+### What worked
+
+- The Glazed middleware chain cleanly enforced the intended precedence without leaking direct `os.Getenv(...)` calls into command/runtime code.
+- The runtime binding registry plus promise-await logic made it possible to support `async` JS exports safely.
+- The first native module surface was enough to cover the imported permissions-audit use case, local workflow-file inspection, and helper-command execution.
+- The fake GitHub API server in `integration/examples_test.go` gave reliable coverage for the GitHub-facing example without depending on live external state.
+- The composite action wrapper was simple enough to keep maintenance low while still proving the CI smoke path.
+
+### What didn't work
+
+- `GOWORK=off go test ./pkg/runtime ./pkg/githubapi ./pkg/modules/github ./pkg/modules/io ./pkg/modules/exec` initially failed with:
+  - `request_test.go:48: url = "https://api.example.test/https://api.other.test/repos/acme/widgets/actions/workflows?page=2", want "https://api.other.test/repos/acme/widgets/actions/workflows?page=2"`
+  - `TypeError: Cannot read property 'owner' of undefined`
+  - `TypeError: Cannot read property 'trim' of undefined or null`
+- A CLI smoke for `@actions/exec` initially failed with:
+  - `Error: execute exported function: runtimeowner run-entrypoint: runtime call panicked: runtime error: invalid memory address or nil pointer dereference`
+- A direct reproduction through `rt.VM.RunString(...)` exposed the real crash site in `pkg/modules/exec/module.go:142`, where an absent `listeners` property was being converted with `ToObject(...)` after a nil Goja value.
+
+### What I learned
+
+- Goja does not automatically turn Go structs into the lower-case JS property shapes implied by `json` tags. When the JS API contract matters, explicit normalization into `map[string]interface{}` is safer.
+- Promise support needs two pieces, not one:
+  - a module-side owner-thread settlement path for asynchronous native work,
+  - a script-runner-side await loop so `async` entrypoints return their fulfilled value instead of a raw `Promise`.
+- Integration tests against a fake GitHub API are the fastest way to keep the GitHub module honest without browsing live endpoints or requiring external credentials.
+
+### What was tricky to build
+
+- The most subtle implementation issue was the line between "safe Go callback" and "safe Goja callback." It is not enough to create a promise in the runtime thread; every later settlement and JS listener invocation also has to return to the owner thread through `runtimeowner.Runner.Post(...)`.
+- The second tricky area was JS-shape normalization. The code initially returned raw Go structs for `github.context`, GitHub API results, and `@actions/exec` outputs, which looked natural in Go but surfaced as `Repo`/`Data`/`Stdout` in JS instead of `repo`/`data`/`stdout`.
+- The fix was consistent across modules:
+  - normalize exported values to plain `map[string]interface{}` objects,
+  - reserve Go structs for internal state,
+  - keep the JS contract explicit in tests.
+
+### What warrants a second pair of eyes
+
+- The `@actions/exec` API is intentionally narrower than the full Node toolkit surface. It would benefit from review if future scripts need timeouts, cancellation controls, or richer callback variants.
+- The first `@actions/github.rest.actions.*` helpers only cover the imported permissions/workflow use case. Additional endpoint coverage should keep the same normalization/error conventions.
+- The composite action wrapper currently builds from source on the runner, which is pragmatic for now but may not be the final release/distribution story.
+
+### What should be done in the future
+
+- Expand `@actions/github` coverage beyond the initial Actions permissions/workflow endpoints if more examples are added.
+- Add explicit timeout/cancellation options to `@actions/exec` if scripts start managing long-running subprocesses.
+- Decide whether the long-term distribution target should stay composite or move to a binary release flow plus lighter wrapper.
+
+### Code review instructions
+
+- Start with `goja-github-actions/pkg/runtime/script_runner.go` and `goja-github-actions/pkg/runtime/bindings.go`.
+- Then review the module packages in this order:
+  - `goja-github-actions/pkg/modules/core`
+  - `goja-github-actions/pkg/modules/github`
+  - `goja-github-actions/pkg/modules/io`
+  - `goja-github-actions/pkg/modules/exec`
+- Validate end to end with:
+  - `GOWORK=off go test ./...`
+  - `GOWORK=off go build ./...`
+  - `GOWORK=off go run ./cmd/goja-gha run --script ./examples/trivial.js --json-result`
+  - `GOWORK=off go run ./cmd/goja-gha run --script ./examples/permissions-audit.js --event-path ./testdata/events/workflow_dispatch.json --json-result`
+- Finally inspect `.github/workflows/ci.yml` and `action.yml` to confirm the packaging/smoke path matches the code.
+
+### Technical details
+
+- Runtime packages:
+  - `goja-github-actions/pkg/runtime/bindings.go`
+  - `goja-github-actions/pkg/runtime/factory.go`
+  - `goja-github-actions/pkg/runtime/globals.go`
+  - `goja-github-actions/pkg/runtime/script_runner.go`
+- Module packages:
+  - `goja-github-actions/pkg/modules/core/*`
+  - `goja-github-actions/pkg/modules/github/*`
+  - `goja-github-actions/pkg/modules/io/*`
+  - `goja-github-actions/pkg/modules/exec/*`
+- Integration/fixtures:
+  - `goja-github-actions/integration/examples_test.go`
+  - `goja-github-actions/testdata/events/workflow_dispatch.json`
+  - `goja-github-actions/examples/*.js`
+- Delivery files:
+  - `goja-github-actions/action.yml`
+  - `goja-github-actions/.github/workflows/ci.yml`

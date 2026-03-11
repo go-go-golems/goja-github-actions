@@ -18,3 +18,5 @@ intent:
 status:
     - slug: active
       description: Document or ticket is currently active and in progress
+    - slug: completed
+      description: Ticket or document work is finished and validated.

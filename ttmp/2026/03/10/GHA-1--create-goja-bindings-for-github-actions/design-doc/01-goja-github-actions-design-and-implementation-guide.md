@@ -1,7 +1,7 @@
 ---
 Title: goja-github-actions design and implementation guide
 Ticket: GHA-1
-Status: active
+Status: completed
 Topics:
     - goja
     - github-actions
@@ -10,36 +10,47 @@ DocType: design-doc
 Intent: long-term
 Owners: []
 RelatedFiles:
-    - Path: go-go-goja/engine/factory.go
+    - Path: ../../../../../../../go-go-goja/engine/factory.go
       Note: Shared runtime factory and module composition model to reuse
-    - Path: go-go-goja/engine/module_specs.go
+    - Path: ../../../../../../../go-go-goja/engine/module_specs.go
       Note: Defines static module specs and runtime initializers
-    - Path: go-go-goja/pkg/runtimeowner/runner.go
+    - Path: ../../../../../../../go-go-goja/pkg/runtimeowner/runner.go
       Note: Owner-thread async settlement pattern for safe Goja callbacks
-    - Path: goja-git/gitmodule.go
+    - Path: ../../../../../../../goja-git/gitmodule.go
       Note: Precedent for JS-facing module surface and object graph
-    - Path: goja-github-actions/cmd/goja-gha/cmds/doctor.go
+    - Path: .github/workflows/ci.yml
+      Note: Current delivery strategy reflected in the implementation-status update
+    - Path: cmd/goja-gha/cmds/doctor.go
       Note: |-
         Bootstrap glaze command that reports resolved settings for early validation
         Current bootstrap inspection flow referenced by the updated implementation guide
-    - Path: goja-github-actions/cmd/goja-gha/cmds/run.go
+    - Path: cmd/goja-gha/cmds/run.go
       Note: |-
         Bootstrap bare command that validates decoded runner and GitHub settings
         Current bootstrap state referenced by the updated implementation guide
-    - Path: goja-github-actions/go.mod
+    - Path: go.mod
       Note: Bootstrap module path and dependencies now match the real repository
-    - Path: goja-github-actions/pkg/cli/github_actions.go
+    - Path: pkg/cli/github_actions.go
       Note: |-
         Current Glazed schema split between shared GitHub fields and default runner fields
         Updated schema-boundary design now matches this file
-    - Path: goja-github-actions/ttmp/2026/03/10/GHA-1--create-goja-bindings-for-github-actions/sources/local/01-imported-planning-notes.md
+    - Path: pkg/cli/middleware.go
+      Note: Current Glazed precedence chain referenced by the implementation-status update
+    - Path: pkg/modules/exec/module.go
+      Note: Current @actions/exec design now backed by the implemented module
+    - Path: pkg/modules/github/module.go
+      Note: Current @actions/github design now backed by the implemented module
+    - Path: pkg/modules/io/module.go
+      Note: Current @actions/io design now backed by the implemented module
+    - Path: ttmp/2026/03/10/GHA-1--create-goja-bindings-for-github-actions/sources/local/01-imported-planning-notes.md
       Note: Imported planning note defining the first serious GitHub Actions policy/audit use case
 ExternalSources: []
-Summary: Detailed architecture and phased implementation guide for building a Goja-based GitHub Actions scripting tool.
-LastUpdated: 2026-03-10T22:14:00-04:00
+Summary: Detailed architecture and phased implementation guide for building and reviewing the implemented Goja-based GitHub Actions scripting tool.
+LastUpdated: 2026-03-10T23:40:00-04:00
 WhatFor: Explain how to build goja-gha on top of go-go-goja, map GitHub Actions concepts into Goja modules, and deliver a practical first milestone.
 WhenToUse: Use when implementing or reviewing the initial goja-github-actions architecture and runtime/module boundaries.
 ---
+
 
 
 
@@ -47,14 +58,28 @@ WhenToUse: Use when implementing or reviewing the initial goja-github-actions ar
 
 ## Executive Summary
 
-`goja-github-actions` is no longer a blank template. The repository now has a real `goja-gha` entrypoint, Glazed/Cobra command wiring for `run` and `doctor`, and an explicit schema split between runner-facing default flags and a shared `github-actions` section for GitHub-specific cross-command fields. What it still does not have is the runtime itself: no Goja factory wiring, no native `@actions/*` modules, and no middleware yet for runner-env resolution. The fastest credible path remains the same: build on the explicit runtime composition already present in `go-go-goja`, then package GitHub Actions concepts as native modules with a cleaner boundary than the hand-rolled approach used in `goja-git`.
+`goja-github-actions` is now a functional implementation rather than a bootstrap scaffold. The repository ships a real `goja-gha` CLI, Glazed/Cobra command wiring for `run` and `doctor`, explicit schema precedence for flags/config/runner-env/defaults, a Goja runtime built on `go-go-goja`, native `@actions/core`, `@actions/github`, `@actions/io`, and `@actions/exec` modules, example scripts, a composite action wrapper, and CI/integration coverage. The implementation commit that completed the planned runtime and module work is `7e8f9ac8d16136ec096f04f77f6ec4fc3a585c99`.
 
-The proposed deliverable is a new CLI tool named `goja-gha`. It runs JavaScript through Goja, exposes a small but useful GitHub Actions API surface through `require("@actions/core")`, `require("@actions/github")`, `require("@actions/io")`, and optional follow-on modules, and lets engineers write repository automation in JavaScript without shipping Node.js code. The first concrete use case is the imported planning note in `sources/local/01-imported-planning-notes.md`, which describes a policy/audit tool for GitHub Actions permissions and workflow hygiene. That is a strong initial target because it mostly needs `core` output primitives, a GitHub API client, file reads for workflow YAML, and a predictable CLI/runtime model.
+This document still serves as the intern-facing architecture guide, but it is now also a review guide for the implemented system. The first concrete use case from the imported planning note, a GitHub Actions permissions/workflow audit, is no longer hypothetical: it is implemented in `examples/permissions-audit.js`, validated against a fake GitHub API in `integration/examples_test.go`, and exposed through the first curated `@actions/github.rest.actions.*` helpers.
 
 Two constraints shape the design:
 
 1. `go-go-goja` already solves the hard runtime-lifecycle problem: explicit factory composition, `require()` setup, module-root resolution, and safe owner-thread callbacks through `runtimeowner.Runner`.
 2. GitHub Actions does not allow a custom JavaScript runtime in `action.yml`; the official metadata syntax supports `node20` and `node24` for JavaScript actions. That means `goja-gha` should be delivered as a standalone CLI first, and as a composite or container action wrapper later if we want first-class GitHub Actions distribution.
+
+## Implementation Status (2026-03-10)
+
+The ticket is now implemented and validated. The current repo state includes:
+
+- `cmd/goja-gha/...` for the CLI entrypoint and Glazed command wiring,
+- `pkg/cli/...` for field definitions, defaults, middleware, decoding, and validation,
+- `pkg/runtime/...` for factory creation, runtime bindings, process globals, and async entrypoint handling,
+- `pkg/runnerfiles/...` for GitHub runner command-file writes,
+- `pkg/modules/core/...`, `pkg/modules/github/...`, `pkg/modules/io/...`, and `pkg/modules/exec/...` for the first native module surface,
+- `examples/*.js` plus `integration/examples_test.go` for end-to-end validation,
+- `action.yml` and `.github/workflows/ci.yml` for local-action and CI delivery.
+
+The sections below still explain why the system is shaped this way, but any older "not implemented yet" statements should now be read as historical design context rather than current repo state.
 
 ## Problem Statement
 
@@ -101,7 +126,7 @@ Out of scope for the MVP:
 
 ## Current State Analysis
 
-### 1. The destination repo now has a bootstrap CLI but not a runtime
+### 1. The destination repo now has a full runtime/module stack built on the earlier bootstrap CLI
 
 Observed files:
 
@@ -115,16 +140,16 @@ Observed files:
 
 Observed behavior:
 
-- `goja-github-actions/go.mod` now uses the real module path and a minimal dependency set for the bootstrap CLI.
+- `goja-github-actions/go.mod` now uses the real module path and includes `go-go-goja`, Glazed, and Cobra dependencies.
 - `goja-github-actions/cmd/goja-gha/cmds/root.go` builds the root command and enables logging/help wiring.
-- `goja-github-actions/cmd/goja-gha/cmds/run.go` validates and prints decoded bootstrap settings, then exits with a clear not-implemented runtime error.
+- `goja-github-actions/cmd/goja-gha/cmds/run.go` decodes settings, boots the Goja runtime, registers the native modules, and can emit JSON results.
 - `goja-github-actions/cmd/goja-gha/cmds/doctor.go` reports resolved settings through Glazed output.
-- `goja-github-actions/pkg/cli/github_actions.go` splits shared GitHub fields (`workspace`, `github-token`) from runner-facing default flags (`script`, `event-path`, runner file paths, `cwd`, `debug`, `json-result`).
-- There are still no packages for runtime setup, native modules, runner-file writers, or GitHub API access.
+- `goja-github-actions/pkg/cli/github_actions.go`, `pkg/cli/defaults.go`, `pkg/cli/middleware.go`, and `pkg/cli/settings.go` now provide the real schema boundary and precedence chain.
+- `goja-github-actions/pkg/runtime`, `pkg/runnerfiles`, `pkg/modules`, and `pkg/githubapi` contain the implemented runtime, module, and API layers.
 
 Implication:
 
-- the design still needs to specify most of the codebase, but it should now treat the bootstrap CLI and current schema split as the fixed starting point rather than as proposed future work.
+- the design can now be reviewed against concrete code instead of acting only as a proposal, and new contributors should treat the shipped runtime/module boundaries as the baseline architecture.
 
 ### 2. `go-go-goja` already has the runtime composition we need
 

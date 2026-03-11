@@ -1,7 +1,7 @@
 ---
 Title: Create GOJA bindings for GitHub Actions
 Ticket: GHA-1
-Status: active
+Status: completed
 Topics:
     - goja
     - github-actions
@@ -12,10 +12,10 @@ Owners: []
 RelatedFiles: []
 ExternalSources:
     - local:01-imported-planning-notes.md
-Summary: Ticket index for the goja-gha architecture/design effort, including imported planning notes and primary deliverables.
-LastUpdated: 2026-03-10T21:28:42.132928817-04:00
-WhatFor: Provide the overview and entrypoint documents for the goja-github-actions planning ticket.
-WhenToUse: Use when orienting a reviewer or implementer to the ticket scope, primary documents, and tracked work.
+Summary: Ticket index for the implemented goja-gha architecture/design/build effort, including imported planning notes and final deliverables.
+LastUpdated: 2026-03-10T23:40:00-04:00
+WhatFor: Provide the overview and entrypoint documents for the completed goja-github-actions ticket.
+WhenToUse: Use when orienting a reviewer or implementer to the delivered scope, primary documents, and tracked work.
 ---
 
 
@@ -35,7 +35,7 @@ This ticket defines the initial architecture for a new tool tentatively named `g
 
 ## Status
 
-Current status: **active**
+Current status: **completed**
 
 ## Topics
 
