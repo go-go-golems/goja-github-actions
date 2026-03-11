@@ -4,8 +4,10 @@ const io = require("@actions/io");
 const ui = require("@goja-gha/ui");
 
 function tryReadWorkflowDir() {
+  const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+  const workflowDir = `${workspace}/.github/workflows`;
   try {
-    return io.readdir(".github/workflows");
+    return io.readdir(workflowDir);
   } catch (err) {
     return [];
   }

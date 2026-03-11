@@ -206,6 +206,10 @@ func TestPermissionsAuditSkipsSelectedActionsWhenPolicyIsNotSelected(t *testing.
 	if got := result["selectedActions"]; got != nil {
 		t.Fatalf("selectedActions = %v, want nil", got)
 	}
+	files, ok := result["localWorkflowFiles"].([]interface{})
+	if !ok || len(files) != 1 || files[0] != "ci.yml" {
+		t.Fatalf("localWorkflowFiles = %#v, want [ci.yml]", result["localWorkflowFiles"])
+	}
 }
 
 func TestPermissionsAuditExamplePrintsHumanReportWithoutJSONResult(t *testing.T) {
