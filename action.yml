@@ -1,0 +1,47 @@
+name: goja-gha
+description: Run GitHub Actions-oriented JavaScript on top of Goja.
+
+inputs:
+  script:
+    description: Path to the JavaScript entrypoint.
+    required: true
+  cwd:
+    description: Working directory for script execution.
+    required: false
+    default: .
+  event-path:
+    description: Optional path to a GitHub event payload JSON file.
+    required: false
+    default: ""
+  github-token:
+    description: Optional token override for GitHub API calls.
+    required: false
+    default: ""
+  json-result:
+    description: Emit the final script result as JSON.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Build goja-gha
+      shell: bash
+      run: |
+        set -euo pipefail
+        go build -o "$RUNNER_TEMP/goja-gha" ./cmd/goja-gha
+    - name: Run script
+      shell: bash
+      run: |
+        set -euo pipefail
+        args=(run --script "${{ inputs.script }}" --cwd "${{ inputs.cwd }}")
+        if [[ -n "${{ inputs.event-path }}" ]]; then
+          args+=(--event-path "${{ inputs.event-path }}")
+        fi
+        if [[ -n "${{ inputs.github-token }}" ]]; then
+          args+=(--github-token "${{ inputs.github-token }}")
+        fi
+        if [[ "${{ inputs.json-result }}" == "true" ]]; then
+          args+=(--json-result)
+        fi
+        "$RUNNER_TEMP/goja-gha" "${args[@]}"

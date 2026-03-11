@@ -15,3 +15,15 @@ func fileExists(path string) bool {
 	}
 	return !info.IsDir()
 }
+
+func environmentSnapshot() map[string]string {
+	env := map[string]string{}
+	for _, entry := range os.Environ() {
+		key, value, ok := strings.Cut(entry, "=")
+		if !ok {
+			continue
+		}
+		env[key] = value
+	}
+	return env
+}

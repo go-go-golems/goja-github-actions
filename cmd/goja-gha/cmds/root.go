@@ -29,12 +29,12 @@ so commands can evolve task by task without ad hoc flag parsing.`,
 }
 
 func buildCommand(command cmds.Command) (*cobra.Command, error) {
+	parserConfig := ghacli.NewParserConfig()
+	parserConfig.ShortHelpSections = []string{schema.DefaultSlug, ghacli.GitHubActionsSectionSlug}
+
 	cobraCommand, err := cli.BuildCobraCommandFromCommand(
 		command,
-		cli.WithParserConfig(cli.CobraParserConfig{
-			AppName:           appName,
-			ShortHelpSections: []string{schema.DefaultSlug, ghacli.GitHubActionsSectionSlug},
-		}),
+		cli.WithParserConfig(parserConfig),
 	)
 	if err != nil {
 		return nil, errors.Wrapf(err, "build cobra command %q", command.Description().Name)

@@ -2,11 +2,9 @@ package cmds
 
 import (
 	"context"
-	"strings"
 
 	glazedcli "github.com/go-go-golems/glazed/pkg/cli"
 	"github.com/go-go-golems/glazed/pkg/cmds"
-	"github.com/go-go-golems/glazed/pkg/cmds/schema"
 	"github.com/go-go-golems/glazed/pkg/cmds/values"
 	"github.com/go-go-golems/glazed/pkg/middlewares"
 	"github.com/go-go-golems/glazed/pkg/settings"
@@ -62,15 +60,11 @@ func (c *DoctorCommand) RunIntoGlazeProcessor(
 	vals *values.Values,
 	gp middlewares.Processor,
 ) error {
-	githubSettings := &ghacli.GitHubActionsSettings{}
-	if err := vals.DecodeSectionInto(ghacli.GitHubActionsSectionSlug, githubSettings); err != nil {
-		return errors.Wrap(err, "decode GitHub Actions settings")
+	runnerSettings, githubSettings, err := ghacli.DecodeSettings(vals)
+	if err != nil {
+		return err
 	}
-
-	runnerSettings := &ghacli.RunnerSettings{}
-	if err := vals.DecodeSectionInto(schema.DefaultSlug, runnerSettings); err != nil {
-		return errors.Wrap(err, "decode runner settings")
-	}
+	validation := ghacli.ValidateRunSettings(runnerSettings, githubSettings)
 
 	row := types.NewRow(
 		types.MRP("script", runnerSettings.Script),
@@ -78,7 +72,7 @@ func (c *DoctorCommand) RunIntoGlazeProcessor(
 		types.MRP("event_path", runnerSettings.EventPath),
 		types.MRP("workspace", githubSettings.Workspace),
 		types.MRP("action_path", runnerSettings.ActionPath),
-		types.MRP("github_token_present", strings.TrimSpace(githubSettings.GitHubToken) != ""),
+		types.MRP("github_token_present", githubSettings.GitHubToken != ""),
 		types.MRP("runner_env_file", runnerSettings.RunnerEnvFile),
 		types.MRP("runner_output_file", runnerSettings.RunnerOutputFile),
 		types.MRP("runner_path_file", runnerSettings.RunnerPathFile),
@@ -86,6 +80,7 @@ func (c *DoctorCommand) RunIntoGlazeProcessor(
 		types.MRP("cwd", runnerSettings.Cwd),
 		types.MRP("debug", runnerSettings.Debug),
 		types.MRP("json_result", runnerSettings.JSONResult),
+		types.MRP("validation_errors", validation.Errors),
 	)
 
 	return gp.AddRow(ctx, row)

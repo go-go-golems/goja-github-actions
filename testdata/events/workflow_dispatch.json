@@ -1,0 +1,10 @@
+{
+  "action": "audit",
+  "repository": {
+    "full_name": "acme/widgets",
+    "name": "widgets",
+    "owner": {
+      "login": "acme"
+    }
+  }
+}
