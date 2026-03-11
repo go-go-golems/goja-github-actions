@@ -15,10 +15,18 @@ type Document struct {
 	Path          string            `json:"path"`
 	Name          string            `json:"name"`
 	TriggerNames  []string          `json:"triggerNames"`
+	WorkflowRun   *WorkflowRun      `json:"workflowRun"`
 	Uses          []UsesReference   `json:"uses"`
 	CheckoutSteps []CheckoutStep    `json:"checkoutSteps"`
 	RunSteps      []RunStep         `json:"runSteps"`
 	Permissions   []PermissionEntry `json:"permissions"`
+}
+
+type WorkflowRun struct {
+	Workflows      []string `json:"workflows"`
+	Types          []string `json:"types"`
+	Branches       []string `json:"branches"`
+	BranchesIgnore []string `json:"branchesIgnore"`
 }
 
 type UsesReference struct {
@@ -122,7 +130,9 @@ func ParseFile(root string, path string) (Document, error) {
 	}
 
 	document.Name = scalarValue(mappingValue(rootNode, "name"))
-	document.TriggerNames = collectTriggerNames(mappingValue(rootNode, "on"))
+	onNode := mappingValue(rootNode, "on")
+	document.TriggerNames = collectTriggerNames(onNode)
+	document.WorkflowRun = collectWorkflowRun(onNode)
 	document.Permissions = append(document.Permissions, collectPermissions(mappingValue(rootNode, "permissions"), "workflow", "")...)
 	document.Uses, document.CheckoutSteps, document.RunSteps = collectJobData(mappingValue(rootNode, "jobs"))
 
@@ -230,6 +240,55 @@ func collectTriggerNames(node *yaml.Node) []string {
 				continue
 			}
 			ret = append(ret, key)
+		}
+		return ret
+	default:
+		return []string{}
+	}
+}
+
+func collectWorkflowRun(node *yaml.Node) *WorkflowRun {
+	node = unwrapDocument(node)
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	workflowRunNode := mappingValue(node, "workflow_run")
+	workflowRunNode = unwrapDocument(workflowRunNode)
+	if workflowRunNode == nil || workflowRunNode.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	ret := &WorkflowRun{
+		Workflows:      collectScalarList(mappingValue(workflowRunNode, "workflows")),
+		Types:          collectScalarList(mappingValue(workflowRunNode, "types")),
+		Branches:       collectScalarList(mappingValue(workflowRunNode, "branches")),
+		BranchesIgnore: collectScalarList(mappingValue(workflowRunNode, "branches-ignore")),
+	}
+	return ret
+}
+
+func collectScalarList(node *yaml.Node) []string {
+	node = unwrapDocument(node)
+	if node == nil {
+		return []string{}
+	}
+
+	switch node.Kind {
+	case yaml.ScalarNode:
+		value := strings.TrimSpace(node.Value)
+		if value == "" {
+			return []string{}
+		}
+		return []string{value}
+	case yaml.SequenceNode:
+		ret := make([]string, 0, len(node.Content))
+		for _, child := range node.Content {
+			value := scalarValue(child)
+			if value == "" {
+				continue
+			}
+			ret = append(ret, value)
 		}
 		return ret
 	default:

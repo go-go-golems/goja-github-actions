@@ -63,6 +63,9 @@ jobs:
 	if len(doc.TriggerNames) != 2 || doc.TriggerNames[0] != "push" || doc.TriggerNames[1] != "pull_request" {
 		t.Fatalf("TriggerNames = %#v, want [push pull_request]", doc.TriggerNames)
 	}
+	if doc.WorkflowRun != nil {
+		t.Fatalf("WorkflowRun = %#v, want nil", doc.WorkflowRun)
+	}
 	if len(doc.Uses) != 3 {
 		t.Fatalf("len(Uses) = %d, want 3", len(doc.Uses))
 	}
@@ -123,5 +126,51 @@ func TestParseFileAcceptsBareFileName(t *testing.T) {
 	}
 	if doc.Path != ".github/workflows/lint.yaml" {
 		t.Fatalf("Path = %q, want .github/workflows/lint.yaml", doc.Path)
+	}
+}
+
+func TestParseWorkflowRunTriggerDetails(t *testing.T) {
+	t.Parallel()
+
+	workspace := t.TempDir()
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workflow dir: %v", err)
+	}
+	content := `name: Follow-up
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - Lint
+    types:
+      - completed
+    branches:
+      - main
+    branches-ignore:
+      - release/*
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "follow-up.yml"), []byte(content), 0o644); err != nil {
+		t.Fatalf("write workflow: %v", err)
+	}
+
+	doc, err := ParseFile(workspace, "follow-up.yml")
+	if err != nil {
+		t.Fatalf("ParseFile: %v", err)
+	}
+	if doc.WorkflowRun == nil {
+		t.Fatalf("WorkflowRun = nil, want details")
+	}
+	if len(doc.WorkflowRun.Workflows) != 2 || doc.WorkflowRun.Workflows[0] != "CI" || doc.WorkflowRun.Workflows[1] != "Lint" {
+		t.Fatalf("WorkflowRun.Workflows = %#v, want [CI Lint]", doc.WorkflowRun.Workflows)
+	}
+	if len(doc.WorkflowRun.Types) != 1 || doc.WorkflowRun.Types[0] != "completed" {
+		t.Fatalf("WorkflowRun.Types = %#v, want [completed]", doc.WorkflowRun.Types)
+	}
+	if len(doc.WorkflowRun.Branches) != 1 || doc.WorkflowRun.Branches[0] != "main" {
+		t.Fatalf("WorkflowRun.Branches = %#v, want [main]", doc.WorkflowRun.Branches)
+	}
+	if len(doc.WorkflowRun.BranchesIgnore) != 1 || doc.WorkflowRun.BranchesIgnore[0] != "release/*" {
+		t.Fatalf("WorkflowRun.BranchesIgnore = %#v, want [release/*]", doc.WorkflowRun.BranchesIgnore)
 	}
 }

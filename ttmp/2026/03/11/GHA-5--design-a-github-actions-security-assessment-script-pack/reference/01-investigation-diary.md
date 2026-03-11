@@ -18,6 +18,8 @@ RelatedFiles:
       Note: First local lint script implemented in Step 4
     - Path: examples/pull-request-target-review.js
       Note: Fourth local lint rule added in Step 7
+    - Path: examples/workflow-run-review.js
+      Note: Fifth local lint rule added in Step 8
     - Path: integration/examples_test.go
       Note: |-
         Integration coverage for the findings-based permissions audit
@@ -34,6 +36,8 @@ RelatedFiles:
       Note: Captured human-readable report output from the live geppetto validation
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-pull-request-target-review.json
       Note: Live geppetto output captured for the new rule
+    - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-workflow-run-review.json
+      Note: Live geppetto output captured for workflow_run review
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh
       Note: Reproducible validation command for the current baseline against /tmp/geppetto
 ExternalSources: []
@@ -42,6 +46,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -701,6 +706,109 @@ To support the rule cleanly, I extended the parser to expose checkout `with.ref`
 ```json
 {
   "scriptId": "pull-request-target-review",
+  "reviewedWorkflowCount": 0,
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 0,
+    "highestSeverity": null,
+    "status": "passed"
+  },
+  "findings": []
+}
+```
+
+## Step 8: Implement workflow_run review as the second trust-boundary rule
+
+This step added `workflow-run-review.js`, which inspects workflows triggered by `workflow_run` and looks for the main boundary risks that show up in follow-up workflows: artifact downloads from upstream runs and checkout of upstream head refs followed by shell execution. It sits one layer closer to cross-workflow trust analysis than the earlier local lint rules, but it still stays within a readable, evidence-rich policy shape because the parser now exposes the trigger metadata and step structure the rule needs.
+
+As with the previous step, the core design goal was to keep YAML semantics in Go and policy semantics in JavaScript. To do that, I extended the parser to surface `workflow_run` trigger details directly on the parsed document. The JS rule then only had to reason about the resulting normalized fields instead of decoding raw YAML trigger maps itself.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 7)
+
+**Assistant interpretation:** Continue the `GHA-5` rule pack after `pull_request_target` with the next structurally similar trust-boundary audit.
+
+**Inferred user intent:** Keep building out the high-signal GitHub Actions security rules while the parser work is fresh and the validation loop is already in place.
+
+### What I did
+
+- Extended parser support for `workflow_run` trigger details in:
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/workflows/parser.go`
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/modules/workflows/module.go`
+- Added `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/workflow-run-review.js`.
+- Added parser coverage in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/workflows/parser_test.go` for `workflow_run` trigger details.
+- Added CLI integration coverage in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go` for:
+  - a dangerous `workflow_run` follow-up workflow that downloads artifacts, checks out `github.event.workflow_run.head_sha`, and then runs shell commands,
+  - the human-readable report output.
+- Updated the ticket validation harness `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh`.
+- Captured `/tmp/geppetto` output in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-workflow-run-review.json`.
+
+### Why
+
+- `workflow_run` is the natural companion to `pull_request_target` in this rule pack because both are trust-boundary-heavy triggers that deserve explicit review.
+- The rule helps move the project from “workflow-local linting” toward “cross-workflow boundary review” without needing a full graph engine yet.
+
+### What worked
+
+- The new `workflowRun` parser field is enough to render useful evidence about upstream workflow names and event types.
+- The fixture test successfully captures a realistic dangerous pattern:
+  - `workflow_run` trigger
+  - artifact download
+  - checkout of `github.event.workflow_run.head_sha`
+  - shell execution after that checkout
+- `/tmp/geppetto` currently has no `workflow_run` workflows, so the live run returns a clean pass.
+
+### What didn't work
+
+- The earlier parser model only had `triggerNames`, which was not rich enough for a useful `workflow_run` review. It had to be extended before the rule could explain what upstream workflows the trigger listens to.
+
+### What I learned
+
+- Trigger detail matters quickly once the rules move beyond local syntax checks and into review-oriented security findings.
+- The existing parser/module split still scales cleanly as the workflow model grows.
+
+### What was tricky to build
+
+- The main tradeoff was choosing the first high-signal `workflow_run` patterns without pretending to solve the entire artifact/cache/dataflow problem in one rule. The final scope was:
+  - always emit a medium review finding for `workflow_run`,
+  - emit a high finding for artifact downloads,
+  - emit a high or critical finding when upstream head checkout is followed by shell execution.
+
+### What warrants a second pair of eyes
+
+- Whether `workflow-run-artifact-bridge` should stay `high` by default or vary based on workflow permissions and follow-up actions.
+- Whether the rule should also flag `github.event.workflow_run.head_repository.full_name` if we start seeing that pattern in the wild.
+
+### What should be done in the future
+
+- Implement `reusable-workflow-trust.js` or `no-privileged-untrusted-checkout.js` next.
+- Consider adding job-level trust labels once more of the cross-boundary rules exist.
+
+### Code review instructions
+
+- Start with `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/workflow-run-review.js`.
+- Then inspect the parser additions in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/workflows/parser.go`.
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && GOWORK=off go test ./pkg/workflows ./pkg/modules/workflows ./integration`
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh`
+
+### Technical details
+
+- Validation commands:
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && GOWORK=off go test ./...`
+  - `source .envrc && GOWORK=off go run ./cmd/goja-gha run --script ./examples/workflow-run-review.js --cwd /tmp --workspace /tmp/geppetto --json-result | jq '{scriptId, reviewedWorkflowCount, summary, findings}'`
+- Live `/tmp/geppetto` result:
+
+```json
+{
+  "scriptId": "workflow-run-review",
   "reviewedWorkflowCount": 0,
   "summary": {
     "counts": {

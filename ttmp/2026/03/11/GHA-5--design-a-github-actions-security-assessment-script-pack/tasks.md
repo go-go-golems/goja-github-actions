@@ -22,9 +22,9 @@
 - [x] Implement `checkout-persist-creds.js`.
 - [x] Implement `no-write-all.js`.
 - [x] Implement `pull-request-target-review.js`.
-- [ ] Implement `workflow-run-review.js`.
-- [ ] Add fixture workflows covering safe and unsafe patterns for each script.
-- [ ] Add CLI integration tests for each new script.
+- [x] Implement `workflow-run-review.js`.
+- [x] Add fixture workflows covering safe and unsafe patterns for each script.
+- [x] Add CLI integration tests for each new script.
 
 ## Phase 3: Introduce shared helpers
 

@@ -84,10 +84,23 @@ func documentToMap(doc workflows.Document) map[string]interface{} {
 		"path":          doc.Path,
 		"name":          doc.Name,
 		"triggerNames":  append([]string(nil), doc.TriggerNames...),
+		"workflowRun":   workflowRunToMap(doc.WorkflowRun),
 		"uses":          usesToMaps(doc.Uses),
 		"checkoutSteps": checkoutStepsToMaps(doc.CheckoutSteps),
 		"runSteps":      runStepsToMaps(doc.RunSteps),
 		"permissions":   permissionsToMaps(doc.Permissions),
+	}
+}
+
+func workflowRunToMap(value *workflows.WorkflowRun) interface{} {
+	if value == nil {
+		return nil
+	}
+	return map[string]interface{}{
+		"workflows":      append([]string(nil), value.Workflows...),
+		"types":          append([]string(nil), value.Types...),
+		"branches":       append([]string(nil), value.Branches...),
+		"branchesIgnore": append([]string(nil), value.BranchesIgnore...),
 	}
 }
 

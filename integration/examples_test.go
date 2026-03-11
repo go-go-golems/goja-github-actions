@@ -887,3 +887,148 @@ jobs:
 		}
 	}
 }
+
+func TestWorkflowRunReviewExampleViaCLI(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+
+	workflow := `name: Follow-up
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+jobs:
+  dangerous:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download upstream artifacts
+        uses: actions/download-artifact@v5
+      - name: Checkout upstream head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Execute artifact content
+        run: ./artifact/run.sh
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "follow-up.yml"), []byte(workflow), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/workflow-run-review.js",
+		"--cwd", tempDir,
+		"--workspace", workspace,
+		"--json-result",
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha workflow-run-review failed: %v\n%s", err, string(output))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		t.Fatalf("decode json result: %v\n%s", err, string(output))
+	}
+
+	if got, want := result["scriptId"], "workflow-run-review"; got != want {
+		t.Fatalf("scriptId = %v, want %v", got, want)
+	}
+	if got, want := result["reviewedWorkflowCount"], float64(1); got != want {
+		t.Fatalf("reviewedWorkflowCount = %v, want %v", got, want)
+	}
+	summary, ok := result["summary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("summary = %#v, want map", result["summary"])
+	}
+	if got, want := summary["findingCount"], float64(3); got != want {
+		t.Fatalf("summary.findingCount = %v, want %v", got, want)
+	}
+	if got, want := summary["highestSeverity"], "critical"; got != want {
+		t.Fatalf("summary.highestSeverity = %v, want %v", got, want)
+	}
+	findingsValue, ok := result["findings"].([]interface{})
+	if !ok || len(findingsValue) != 3 {
+		t.Fatalf("findings = %#v, want 3 findings", result["findings"])
+	}
+
+	third, ok := findingsValue[2].(map[string]interface{})
+	if !ok {
+		t.Fatalf("third finding = %#v, want map", findingsValue[2])
+	}
+	evidence, ok := third["evidence"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("third finding evidence = %#v, want map", third["evidence"])
+	}
+	if got, want := evidence["runStepCount"], float64(1); got != want {
+		t.Fatalf("evidence.runStepCount = %v, want %v", got, want)
+	}
+}
+
+func TestWorkflowRunReviewExamplePrintsHumanReport(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+
+	workflow := `name: Follow-up metadata
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit summary
+        run: echo done
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "follow-up.yml"), []byte(workflow), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/workflow-run-review.js",
+		"--cwd", tempDir,
+		"--workspace", workspace,
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha workflow-run-review human report failed: %v\n%s", err, string(output))
+	}
+
+	rendered := string(output)
+	for _, needle := range []string{
+		"Workflow Run Review",
+		"Reviewed workflows",
+		"workflow-run-review",
+		".github/workflows/follow-up.yml",
+	} {
+		if !strings.Contains(rendered, needle) {
+			t.Fatalf("human report missing %q:\n%s", needle, rendered)
+		}
+	}
+}

@@ -25,3 +25,7 @@
 - Implemented `pull-request-target-review.js` as the fourth local workflow lint script.
 - Added fixture-style CLI integration coverage for both a dangerous `pull_request_target` pattern and the human-readable report output.
 - Revalidated `/tmp/geppetto`; the new `pull-request-target-review.js` currently passes with zero findings because no local workflow uses `pull_request_target`.
+- Extended the workflow parser again so local policy scripts can inspect `workflow_run` trigger details.
+- Implemented `workflow-run-review.js` as the fifth local workflow lint script.
+- Added fixture-style CLI integration coverage for both a dangerous `workflow_run` follow-up pattern and the human-readable report output.
+- Revalidated `/tmp/geppetto`; the new `workflow-run-review.js` currently passes with zero findings because no local workflow uses `workflow_run`.
