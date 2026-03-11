@@ -8,6 +8,7 @@ import (
 	"github.com/go-go-golems/glazed/pkg/help"
 	help_cmd "github.com/go-go-golems/glazed/pkg/help/cmd"
 	ghacli "github.com/go-go-golems/goja-github-actions/pkg/cli"
+	helpdoc "github.com/go-go-golems/goja-github-actions/pkg/helpdoc"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -20,8 +21,8 @@ func newRootCommand() *cobra.Command {
 		Short: "Run GitHub Actions-oriented JavaScript on top of Goja",
 		Long: `goja-gha is a Go/Goja CLI for GitHub Actions-style JavaScript automation.
 
-The current bootstrap build wires the Glazed command surface and shared schema,
-so commands can evolve task by task without ad hoc flag parsing.`,
+It includes a native @actions/*-style module surface, runner-file support,
+and embedded long-form help pages for users and developers.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return logging.InitLoggerFromCobra(cmd)
 		},
@@ -50,6 +51,9 @@ func Execute() error {
 	}
 
 	helpSystem := help.NewHelpSystem()
+	if err := helpdoc.AddDocToHelpSystem(helpSystem); err != nil {
+		return errors.Wrap(err, "load embedded help docs")
+	}
 	help_cmd.SetupCobraRootCommand(helpSystem, root)
 
 	runCommand, err := NewRunCommand()
