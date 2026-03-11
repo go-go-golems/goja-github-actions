@@ -88,11 +88,11 @@ type tableOptions struct {
 	Rows    [][]string `json:"rows"`
 }
 
-func (statusBlock) reportBlock()  {}
-func (kvBlock) reportBlock()      {}
-func (listBlock) reportBlock()    {}
-func (tableBlock) reportBlock()   {}
-func (sectionBlock) reportBlock() {}
+func (statusBlock) reportBlock()   {}
+func (kvBlock) reportBlock()       {}
+func (listBlock) reportBlock()     {}
+func (tableBlock) reportBlock()    {}
+func (sectionBlock) reportBlock()  {}
 func (findingsBlock) reportBlock() {}
 
 func NewDependencies(settings *gharuntime.Settings) *Dependencies {
@@ -173,7 +173,7 @@ func (m *Module) newReportObject(report *reportBuilder) *goja.Object {
 		if len(call.Arguments) > 0 {
 			label = call.Argument(0).String()
 		}
-		var value goja.Value = goja.Undefined()
+		value := goja.Undefined()
 		if len(call.Arguments) > 1 {
 			value = call.Argument(1)
 		}
@@ -257,7 +257,7 @@ func (m *Module) newSectionObject(blocks *[]reportBlock) *goja.Object {
 		if len(call.Arguments) > 0 {
 			label = call.Argument(0).String()
 		}
-		var value goja.Value = goja.Undefined()
+		value := goja.Undefined()
 		if len(call.Arguments) > 1 {
 			value = call.Argument(1)
 		}

@@ -21,9 +21,11 @@ func TestFormatCLIErrorForWrappedGitHubAPIError(t *testing.T) {
 	}
 
 	var err error
-	vm.Set("fail", func() {
+	if setErr := vm.Set("fail", func() {
 		panic(vm.NewGoError(raw))
-	})
+	}); setErr != nil {
+		t.Fatalf("vm.Set fail: %v", setErr)
+	}
 	_, err = vm.RunString(`fail()`)
 	if err == nil {
 		t.Fatal("expected JS execution to fail")

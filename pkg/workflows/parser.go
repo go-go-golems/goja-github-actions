@@ -242,6 +242,8 @@ func collectTriggerNames(node *yaml.Node) []string {
 			ret = append(ret, key)
 		}
 		return ret
+	case yaml.DocumentNode, yaml.AliasNode:
+		return []string{}
 	default:
 		return []string{}
 	}
@@ -291,6 +293,8 @@ func collectScalarList(node *yaml.Node) []string {
 			ret = append(ret, value)
 		}
 		return ret
+	case yaml.MappingNode, yaml.DocumentNode, yaml.AliasNode:
+		return []string{}
 	default:
 		return []string{}
 	}
@@ -465,6 +469,14 @@ func collectPermissions(node *yaml.Node, scope string, jobID string) []Permissio
 			Line:  node.Line,
 			Kind:  "map",
 			Value: values,
+		}}
+	case yaml.SequenceNode, yaml.DocumentNode, yaml.AliasNode:
+		return []PermissionEntry{{
+			Scope: scope,
+			JobID: jobID,
+			Line:  node.Line,
+			Kind:  "unknown",
+			Value: nil,
 		}}
 	default:
 		return []PermissionEntry{{
