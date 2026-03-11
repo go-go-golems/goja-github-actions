@@ -9,6 +9,7 @@ JSON_OUT="$SCRIPTS_DIR/geppetto-permissions-audit.json"
 REPORT_OUT="$SCRIPTS_DIR/geppetto-permissions-audit.txt"
 PR_TARGET_JSON_OUT="$SCRIPTS_DIR/geppetto-pull-request-target-review.json"
 WORKFLOW_RUN_JSON_OUT="$SCRIPTS_DIR/geppetto-workflow-run-review.json"
+REUSABLE_JSON_OUT="$SCRIPTS_DIR/geppetto-reusable-workflow-trust.json"
 
 if [[ ! -d "$REPO_DIR" ]]; then
   echo "repository checkout not found: $REPO_DIR" >&2
@@ -46,6 +47,12 @@ GOWORK=off go run ./cmd/goja-gha run \
   --workspace "$REPO_DIR" \
   --json-result >"$WORKFLOW_RUN_JSON_OUT"
 
+GOWORK=off go run ./cmd/goja-gha run \
+  --script ./examples/reusable-workflow-trust.js \
+  --cwd "$REPO_DIR" \
+  --workspace "$REPO_DIR" \
+  --json-result >"$REUSABLE_JSON_OUT"
+
 jq '{
   scriptId,
   repository,
@@ -76,3 +83,11 @@ jq '{
   summary,
   findings
 }' "$WORKFLOW_RUN_JSON_OUT"
+
+jq '{
+  scriptId,
+  repository,
+  workspace,
+  summary,
+  findings
+}' "$REUSABLE_JSON_OUT"

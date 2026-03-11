@@ -166,6 +166,9 @@ func (m *Module) runCommand(
 	options execOptions,
 	listeners execListeners,
 ) (*execResult, error) {
+	// #nosec G204 -- This module intentionally executes user-authored workflow commands.
+	// Security review happens at the workflow/policy layer rather than by constraining
+	// the command string here.
 	cmd := osExec.CommandContext(ctx, command, args...)
 	cmd.Dir = m.cwd(options)
 	cmd.Env = environmentSlice(m.environment(options))

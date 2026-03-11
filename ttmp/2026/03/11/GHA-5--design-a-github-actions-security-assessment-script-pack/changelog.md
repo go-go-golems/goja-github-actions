@@ -29,3 +29,6 @@
 - Implemented `workflow-run-review.js` as the fifth local workflow lint script.
 - Added fixture-style CLI integration coverage for both a dangerous `workflow_run` follow-up pattern and the human-readable report output.
 - Revalidated `/tmp/geppetto`; the new `workflow-run-review.js` currently passes with zero findings because no local workflow uses `workflow_run`.
+- Fixed `make gosec` by tightening runner-file permissions and documenting the intentional subprocess execution boundary in the exec module.
+- Implemented `reusable-workflow-trust.js` as the next workflow trust rule, focused on external-owner reusable workflows and unpinned reusable workflow refs.
+- Added fixture-style CLI integration coverage for reusable workflow trust checks and revalidated `/tmp/geppetto`; the new rule currently passes with zero findings.

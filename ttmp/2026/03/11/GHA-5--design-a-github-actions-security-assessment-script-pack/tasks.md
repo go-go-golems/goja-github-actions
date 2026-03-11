@@ -44,7 +44,7 @@
 ## Phase 5: Advanced trust-boundary analysis
 
 - [ ] Implement `no-privileged-untrusted-checkout.js`.
-- [ ] Implement `reusable-workflow-trust.js`.
+- [x] Implement `reusable-workflow-trust.js`.
 - [ ] Implement `no-artifact-bridge.js`.
 - [ ] Implement `no-cache-bridge.js`.
 - [ ] Implement a trust-label model for privileged, untrusted, and external-input nodes.

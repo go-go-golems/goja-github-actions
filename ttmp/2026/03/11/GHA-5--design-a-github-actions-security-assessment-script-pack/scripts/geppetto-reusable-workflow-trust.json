@@ -1,0 +1,27 @@
+{
+  "findings": [],
+  "repository": "go-go-golems/geppetto",
+  "scriptId": "reusable-workflow-trust",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 0,
+    "highestSeverity": null,
+    "status": "passed"
+  },
+  "workflowFiles": [
+    "codeql-analysis.yml",
+    "dependency-scanning.yml",
+    "lint.yml",
+    "push.yml",
+    "release.yml",
+    "secret-scanning.yml",
+    "tag-release-notes.yml"
+  ],
+  "workspace": "/tmp/geppetto"
+}

@@ -18,6 +18,8 @@ RelatedFiles:
       Note: First local lint script implemented in Step 4
     - Path: examples/pull-request-target-review.js
       Note: Fourth local lint rule added in Step 7
+    - Path: examples/reusable-workflow-trust.js
+      Note: Reusable workflow trust rule added in Step 9
     - Path: examples/workflow-run-review.js
       Note: Fifth local lint rule added in Step 8
     - Path: integration/examples_test.go
@@ -36,6 +38,8 @@ RelatedFiles:
       Note: Captured human-readable report output from the live geppetto validation
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-pull-request-target-review.json
       Note: Live geppetto output captured for the new rule
+    - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-reusable-workflow-trust.json
+      Note: Live geppetto output captured for reusable workflow trust
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-workflow-run-review.json
       Note: Live geppetto output captured for workflow_run review
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh
@@ -46,6 +50,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -810,6 +815,103 @@ As with the previous step, the core design goal was to keep YAML semantics in Go
 {
   "scriptId": "workflow-run-review",
   "reviewedWorkflowCount": 0,
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 0,
+    "highestSeverity": null,
+    "status": "passed"
+  },
+  "findings": []
+}
+```
+
+## Step 9: Fix gosec and add reusable workflow trust review
+
+This step had two linked goals. First, bring the repository back to a clean `make gosec` run so the security-tooling baseline keeps pace with the new rule work. Second, continue the `GHA-5` rule pack with `reusable-workflow-trust.js`, which reviews job-level reusable workflow references for mutable refs and external owner boundaries.
+
+`reusable-workflow-trust.js` is intentionally narrower than a full trust graph. It flags the things we can see reliably from the current parser surface: whether a reusable workflow ref is pinned to a full commit SHA, and whether it crosses out of the current repository owner boundary. That keeps the rule useful without pretending to solve every reusable-workflow authority question at once.
+
+### Prompt Context
+
+**User prompt (verbatim):** "make gosec too. Then continue with the JS scripts."
+
+**Assistant interpretation:** Fix the security-tooling baseline first, then keep implementing the next JS security script instead of stopping after the tooling fix.
+
+**Inferred user intent:** Keep the repository green on security checks while still pushing the actual feature work forward.
+
+### What I did
+
+- Fixed `gosec` findings in:
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/runnerfiles/common.go`
+  - `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/modules/exec/module.go`
+- Added `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/reusable-workflow-trust.js`.
+- Added CLI integration coverage in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go`.
+- Extended the ticket validation harness `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh`.
+- Captured live output in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-reusable-workflow-trust.json`.
+- Re-ran:
+  - `make lint`
+  - `make gosec`
+  - `GOWORK=off go test ./integration`
+
+### Why
+
+- A growing security rule pack should not coexist with a broken security-tooling baseline.
+- Reusable workflows are one of the explicit follow-up items in the imported plan and a natural next trust-boundary rule after `workflow_run`.
+
+### What worked
+
+- `make gosec` now passes cleanly.
+- The reusable-workflow rule integrates cleanly with the existing parser because job-level reusable workflow refs were already exposed through `document.uses`.
+- `/tmp/geppetto` currently has no findings for this rule, which matches the current local workflow set.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- The current parser already exposes enough structure for a useful first reusable-workflow trust rule.
+- The remaining hard part for reusable workflows is not detection but richer authority modeling, which should wait until more of the trust-boundary pack exists.
+
+### What was tricky to build
+
+- The main design call was choosing what “trust” means in the first version. I kept it to two observable signals:
+  - mutable ref versus full SHA
+  - same-owner versus external-owner
+
+That keeps the rule explainable and low-noise while still surfacing the most obvious review points.
+
+### What warrants a second pair of eyes
+
+- Whether same-owner but different-repo reusable workflows should eventually be downgraded, upgraded, or split into a separate rule class.
+
+### What should be done in the future
+
+- Implement `no-privileged-untrusted-checkout.js` next.
+- Revisit reusable-workflow trust once job-level trust labels and secrets/permissions modeling exist.
+
+### Code review instructions
+
+- Start with `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/reusable-workflow-trust.js`.
+- Review the `gosec` fixes in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/runnerfiles/common.go` and `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/modules/exec/module.go`.
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && make lint`
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && make gosec`
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && GOWORK=off go test ./integration`
+
+### Technical details
+
+- Live `/tmp/geppetto` result:
+
+```json
+{
+  "scriptId": "reusable-workflow-trust",
   "summary": {
     "counts": {
       "critical": 0,
