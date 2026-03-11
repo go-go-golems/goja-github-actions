@@ -17,6 +17,7 @@ import (
 	githubmodule "github.com/go-go-golems/goja-github-actions/pkg/modules/github"
 	iomodule "github.com/go-go-golems/goja-github-actions/pkg/modules/io"
 	uimodule "github.com/go-go-golems/goja-github-actions/pkg/modules/ui"
+	workflowmodule "github.com/go-go-golems/goja-github-actions/pkg/modules/workflows"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
@@ -86,6 +87,7 @@ func (c *RunCommand) Run(_ context.Context, vals *values.Values) error {
 		execmodule.Spec(&execmodule.Dependencies{Settings: settings}),
 		githubmodule.Spec(&githubmodule.Dependencies{Settings: settings}),
 		uimodule.Spec(uimodule.NewDependencies(settings)),
+		workflowmodule.Spec(&workflowmodule.Dependencies{Settings: settings}),
 	)
 	if err != nil {
 		return err
