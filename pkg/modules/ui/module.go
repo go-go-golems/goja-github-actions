@@ -794,7 +794,9 @@ func renderFindings(buffer *bytes.Buffer, fb findingsBlock, color bool) {
 		writeLine(buffer, header+strings.Repeat(" ", padding)+countLabel)
 
 		// Message
-		writeLine(buffer, "  "+group.Message)
+		for _, line := range wordWrap(group.Message, 68) {
+			writeLine(buffer, "  "+line)
+		}
 
 		// Why it matters
 		if group.WhyItMatters != "" {
@@ -821,7 +823,14 @@ func renderFindings(buffer *bytes.Buffer, fb findingsBlock, color bool) {
 				writeLine(buffer, "    "+line)
 			}
 			if group.Example != "" {
-				writeLine(buffer, "    Example: "+group.Example)
+				prefix := "    Example: "
+				wrapped := wordWrap(group.Example, 66-len("Example: "))
+				if len(wrapped) > 0 {
+					writeLine(buffer, prefix+wrapped[0])
+					for _, line := range wrapped[1:] {
+						writeLine(buffer, "    "+strings.Repeat(" ", len("Example: "))+line)
+					}
+				}
 			}
 		}
 
