@@ -1,0 +1,446 @@
+{
+  "findings": [
+    {
+      "evidence": {
+        "jobId": "analyze",
+        "kind": "step",
+        "line": 20,
+        "path": ".github/workflows/codeql-analysis.yml",
+        "stepName": "Checkout repository",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "analyze",
+        "kind": "step",
+        "line": 23,
+        "path": ".github/workflows/codeql-analysis.yml",
+        "stepName": "Initialize CodeQL",
+        "uses": "github/codeql-action/init@v4"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: github/codeql-action/init@v4",
+      "remediation": {
+        "example": "github/codeql-action/init@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "analyze",
+        "kind": "step",
+        "line": 28,
+        "path": ".github/workflows/codeql-analysis.yml",
+        "stepName": "Perform CodeQL Analysis",
+        "uses": "github/codeql-action/analyze@v4"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: github/codeql-action/analyze@v4",
+      "remediation": {
+        "example": "github/codeql-action/analyze@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "dependency-review",
+        "kind": "step",
+        "line": 18,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "dependency-review",
+        "kind": "step",
+        "line": 21,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "stepName": "Dependency Review",
+        "uses": "actions/dependency-review-action@v4"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/dependency-review-action@v4",
+      "remediation": {
+        "example": "actions/dependency-review-action@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "govulncheck",
+        "kind": "step",
+        "line": 30,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "govulncheck",
+        "kind": "step",
+        "line": 33,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "stepName": "Set up Go",
+        "uses": "actions/setup-go@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/setup-go@v6",
+      "remediation": {
+        "example": "actions/setup-go@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "gosec",
+        "kind": "step",
+        "line": 48,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "gosec",
+        "kind": "step",
+        "line": 51,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "stepName": "Set up Go",
+        "uses": "actions/setup-go@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/setup-go@v6",
+      "remediation": {
+        "example": "actions/setup-go@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "golangci",
+        "kind": "step",
+        "line": 21,
+        "path": ".github/workflows/lint.yml",
+        "stepName": null,
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "golangci",
+        "kind": "step",
+        "line": 26,
+        "path": ".github/workflows/lint.yml",
+        "stepName": "Set up Go",
+        "uses": "actions/setup-go@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/setup-go@v6",
+      "remediation": {
+        "example": "actions/setup-go@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "golangci",
+        "kind": "step",
+        "line": 31,
+        "path": ".github/workflows/lint.yml",
+        "stepName": "golangci-lint",
+        "uses": "golangci/golangci-lint-action@v9"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: golangci/golangci-lint-action@v9",
+      "remediation": {
+        "example": "golangci/golangci-lint-action@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "test",
+        "kind": "step",
+        "line": 13,
+        "path": ".github/workflows/push.yml",
+        "stepName": null,
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "test",
+        "kind": "step",
+        "line": 17,
+        "path": ".github/workflows/push.yml",
+        "stepName": null,
+        "uses": "actions/setup-go@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/setup-go@v6",
+      "remediation": {
+        "example": "actions/setup-go@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "goreleaser",
+        "kind": "step",
+        "line": 18,
+        "path": ".github/workflows/release.yml",
+        "stepName": null,
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "goreleaser",
+        "kind": "step",
+        "line": 22,
+        "path": ".github/workflows/release.yml",
+        "stepName": null,
+        "uses": "actions/setup-go@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/setup-go@v6",
+      "remediation": {
+        "example": "actions/setup-go@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "goreleaser",
+        "kind": "step",
+        "line": 33,
+        "path": ".github/workflows/release.yml",
+        "stepName": "Import GPG key",
+        "uses": "crazy-max/ghaction-import-gpg@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: crazy-max/ghaction-import-gpg@v6",
+      "remediation": {
+        "example": "crazy-max/ghaction-import-gpg@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "goreleaser",
+        "kind": "step",
+        "line": 39,
+        "path": ".github/workflows/release.yml",
+        "stepName": null,
+        "uses": "goreleaser/goreleaser-action@v7"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: goreleaser/goreleaser-action@v7",
+      "remediation": {
+        "example": "goreleaser/goreleaser-action@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "trufflehog",
+        "kind": "step",
+        "line": 15,
+        "path": ".github/workflows/secret-scanning.yml",
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: actions/checkout@v6",
+      "remediation": {
+        "example": "actions/checkout@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "trufflehog",
+        "kind": "step",
+        "line": 20,
+        "path": ".github/workflows/secret-scanning.yml",
+        "stepName": "TruffleHog OSS",
+        "uses": "trufflesecurity/trufflehog@main"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: trufflesecurity/trufflehog@main",
+      "remediation": {
+        "example": "trufflesecurity/trufflehog@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "release",
+        "kind": "step",
+        "line": 22,
+        "path": ".github/workflows/tag-release-notes.yml",
+        "stepName": "Create GitHub Release (no artifacts) (tag push)",
+        "uses": "softprops/action-gh-release@v2"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: softprops/action-gh-release@v2",
+      "remediation": {
+        "example": "softprops/action-gh-release@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    },
+    {
+      "evidence": {
+        "jobId": "release",
+        "kind": "step",
+        "line": 29,
+        "path": ".github/workflows/tag-release-notes.yml",
+        "stepName": "Create GitHub Release (no artifacts) (manual backfill)",
+        "uses": "softprops/action-gh-release@v2"
+      },
+      "message": "Action or reusable workflow is not pinned to a full commit SHA: softprops/action-gh-release@v2",
+      "remediation": {
+        "example": "softprops/action-gh-release@0123456789abcdef0123456789abcdef01234567",
+        "summary": "Pin external actions and reusable workflows to a full commit SHA."
+      },
+      "ruleId": "pin-third-party-actions",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows."
+    }
+  ],
+  "repository": "go-go-golems/geppetto",
+  "scriptId": "pin-third-party-actions",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 22,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 22,
+    "highestSeverity": "high",
+    "status": "findings"
+  },
+  "workflowFiles": [
+    "codeql-analysis.yml",
+    "dependency-scanning.yml",
+    "lint.yml",
+    "push.yml",
+    "release.yml",
+    "secret-scanning.yml",
+    "tag-release-notes.yml"
+  ],
+  "workspace": "/tmp/geppetto"
+}

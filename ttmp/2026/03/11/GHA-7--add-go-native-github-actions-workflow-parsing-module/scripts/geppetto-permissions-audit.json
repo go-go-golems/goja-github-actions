@@ -1,0 +1,130 @@
+{
+  "actor": null,
+  "eventName": null,
+  "findings": [
+    {
+      "evidence": {
+        "allowed_actions": "all"
+      },
+      "message": "Repository allows all GitHub Actions and reusable workflows.",
+      "remediation": {
+        "example": "Set repository Actions permissions so `allowed_actions` is `selected` and configure `selected-actions` patterns.",
+        "summary": "Prefer `selected` with an explicit allowlist, or `local_only` if the repository only needs local actions."
+      },
+      "ruleId": "allowed-actions-not-restricted",
+      "scope": "repository",
+      "severity": "high",
+      "whyItMatters": "Allowing all actions increases supply-chain risk because workflows can consume mutable third-party actions without an allowlist boundary."
+    },
+    {
+      "evidence": {
+        "sha_pinning_required": false
+      },
+      "message": "Repository does not require full commit SHA pinning for actions.",
+      "remediation": {
+        "summary": "Enable SHA pinning requirements if your policy is to require full commit SHAs for external actions."
+      },
+      "ruleId": "sha-pinning-not-required",
+      "scope": "repository",
+      "severity": "medium",
+      "whyItMatters": "Without SHA pinning requirements, mutable tags such as `@v1` can still be used in workflows."
+    }
+  ],
+  "localWorkflowFiles": [
+    "codeql-analysis.yml",
+    "dependency-scanning.yml",
+    "lint.yml",
+    "push.yml",
+    "release.yml",
+    "secret-scanning.yml",
+    "tag-release-notes.yml"
+  ],
+  "permissions": {
+    "allowed_actions": "all",
+    "enabled": true,
+    "sha_pinning_required": false
+  },
+  "repository": "go-go-golems/geppetto",
+  "runnerOutput": {
+    "error": "runner output file path is empty",
+    "written": false
+  },
+  "scriptId": "permissions-audit",
+  "selectedActions": null,
+  "selectedActionsReason": "selected-actions only applies when allowed_actions == \"selected\" (got all)",
+  "selectedActionsStatus": "skipped-not-selected-policy",
+  "stepSummary": {
+    "error": "runner summary file path is empty",
+    "written": false
+  },
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 1,
+      "info": 0,
+      "low": 0,
+      "medium": 1
+    },
+    "findingCount": 2,
+    "highestSeverity": "high",
+    "status": "findings"
+  },
+  "workflowCount": 10,
+  "workflowPermissions": {
+    "can_approve_pull_request_reviews": false,
+    "default_workflow_permissions": "read"
+  },
+  "workflows": [
+    {
+      "id": 153838012,
+      "name": "CodeQL Analysis",
+      "path": ".github/workflows/codeql-analysis.yml"
+    },
+    {
+      "id": 153838013,
+      "name": "Dependency Scanning",
+      "path": ".github/workflows/dependency-scanning.yml"
+    },
+    {
+      "id": 46177531,
+      "name": "golangci-lint",
+      "path": ".github/workflows/lint.yml"
+    },
+    {
+      "id": 46177532,
+      "name": "golang-pipeline",
+      "path": ".github/workflows/push.yml"
+    },
+    {
+      "id": 46177533,
+      "name": "release",
+      "path": ".github/workflows/release.yml"
+    },
+    {
+      "id": 153838015,
+      "name": "Secret Scanning",
+      "path": ".github/workflows/secret-scanning.yml"
+    },
+    {
+      "id": 217152008,
+      "name": "tag-release-notes",
+      "path": ".github/workflows/tag-release-notes.yml"
+    },
+    {
+      "id": 172877941,
+      "name": "Copilot",
+      "path": "dynamic/copilot-swe-agent/copilot"
+    },
+    {
+      "id": 153838051,
+      "name": "Dependabot Updates",
+      "path": "dynamic/dependabot/dependabot-updates"
+    },
+    {
+      "id": 216807204,
+      "name": "Dependency Graph",
+      "path": "dynamic/dependabot/update-graph"
+    }
+  ],
+  "workspace": "/tmp/geppetto"
+}

@@ -1,0 +1,172 @@
+{
+  "findings": [
+    {
+      "evidence": {
+        "jobId": "analyze",
+        "line": 20,
+        "path": ".github/workflows/codeql-analysis.yml",
+        "persistCredentials": null,
+        "stepName": "Checkout repository",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "dependency-review",
+        "line": 18,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "persistCredentials": null,
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "govulncheck",
+        "line": 30,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "persistCredentials": null,
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "gosec",
+        "line": 48,
+        "path": ".github/workflows/dependency-scanning.yml",
+        "persistCredentials": null,
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "golangci",
+        "line": 21,
+        "path": ".github/workflows/lint.yml",
+        "persistCredentials": null,
+        "stepName": null,
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "test",
+        "line": 13,
+        "path": ".github/workflows/push.yml",
+        "persistCredentials": null,
+        "stepName": null,
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "goreleaser",
+        "line": 18,
+        "path": ".github/workflows/release.yml",
+        "persistCredentials": null,
+        "stepName": null,
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    },
+    {
+      "evidence": {
+        "jobId": "trufflehog",
+        "line": 15,
+        "path": ".github/workflows/secret-scanning.yml",
+        "persistCredentials": null,
+        "stepName": "Checkout code",
+        "uses": "actions/checkout@v6"
+      },
+      "message": "actions/checkout@v6 is used without persist-credentials: false",
+      "remediation": {
+        "summary": "Add `persist-credentials: false` under the checkout step's `with:` block unless the workflow has a reviewed reason to keep credentials persisted."
+      },
+      "ruleId": "checkout-persist-creds",
+      "scope": "workflow",
+      "severity": "high",
+      "whyItMatters": "Persisted checkout credentials can widen token exposure inside a workflow run and make credential exfiltration easier."
+    }
+  ],
+  "repository": "go-go-golems/geppetto",
+  "scriptId": "checkout-persist-creds",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 8,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 8,
+    "highestSeverity": "high",
+    "status": "findings"
+  },
+  "workflowFiles": [
+    "codeql-analysis.yml",
+    "dependency-scanning.yml",
+    "lint.yml",
+    "push.yml",
+    "release.yml",
+    "secret-scanning.yml",
+    "tag-release-notes.yml"
+  ],
+  "workspace": "/tmp/geppetto"
+}

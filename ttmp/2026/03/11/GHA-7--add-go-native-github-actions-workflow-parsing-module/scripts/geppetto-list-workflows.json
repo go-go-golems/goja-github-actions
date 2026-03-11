@@ -1,0 +1,14 @@
+{
+  "gitRoot": "/tmp/geppetto",
+  "repository": "go-go-golems/geppetto",
+  "workflowFiles": [
+    "codeql-analysis.yml",
+    "dependency-scanning.yml",
+    "lint.yml",
+    "push.yml",
+    "release.yml",
+    "secret-scanning.yml",
+    "tag-release-notes.yml"
+  ],
+  "workspace": "/tmp/geppetto"
+}

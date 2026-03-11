@@ -1,7 +1,7 @@
 ---
 Title: Add Go-native GitHub Actions workflow parsing module
 Ticket: GHA-7
-Status: active
+Status: complete
 Topics:
     - github-actions
     - goja
@@ -11,11 +11,12 @@ Intent: long-term
 Owners: []
 RelatedFiles: []
 ExternalSources: []
-Summary: "Build a Go-native @goja-gha/workflows module that parses local workflow YAML into normalized JS-facing structures with file and line metadata, then migrate the existing workflow audit scripts to use it."
-LastUpdated: 2026-03-11T13:07:51.722750035-04:00
-WhatFor: "Reduce fragile ad hoc YAML parsing in JavaScript audit scripts and establish a reusable workflow-analysis foundation for future security checks."
-WhenToUse: "Use this ticket when working on local GitHub Actions workflow inspection, rule authoring, or parser-backed JS helper APIs."
+Summary: Build a Go-native @goja-gha/workflows module that parses local workflow YAML into normalized JS-facing structures with file and line metadata, then migrate the existing workflow audit scripts to use it.
+LastUpdated: 2026-03-11T13:49:06.246535486-04:00
+WhatFor: Reduce fragile ad hoc YAML parsing in JavaScript audit scripts and establish a reusable workflow-analysis foundation for future security checks.
+WhenToUse: Use this ticket when working on local GitHub Actions workflow inspection, rule authoring, or parser-backed JS helper APIs.
 ---
+
 
 # Add Go-native GitHub Actions workflow parsing module
 

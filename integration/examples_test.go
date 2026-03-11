@@ -387,7 +387,8 @@ jobs:
       - uses: acme/internal-action@0123456789abcdef0123456789abcdef01234567
       - uses: docker://alpine:3.20
       - uses: ./.github/actions/local-helper
-      - uses: acme/reusable/.github/workflows/build.yml@main
+  reusable:
+    uses: acme/reusable/.github/workflows/build.yml@main
 `
 	if err := os.WriteFile(filepath.Join(workflowDir, "ci.yml"), []byte(workflow), 0o644); err != nil {
 		t.Fatalf("write workflow file: %v", err)

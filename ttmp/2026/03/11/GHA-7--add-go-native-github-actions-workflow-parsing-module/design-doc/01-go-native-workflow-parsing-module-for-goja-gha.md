@@ -9,13 +9,26 @@ Topics:
 DocType: design-doc
 Intent: long-term
 Owners: []
-RelatedFiles: []
+RelatedFiles:
+    - Path: cmd/goja-gha/cmds/run.go
+      Note: Runtime module wiring for @goja-gha/workflows
+    - Path: examples/checkout-persist-creds.js
+      Note: First migrated rule using parsed checkout step data
+    - Path: examples/no-write-all.js
+      Note: First migrated rule using parsed permissions data
+    - Path: examples/pin-third-party-actions.js
+      Note: First migrated rule using parsed uses references
+    - Path: pkg/modules/workflows/module.go
+      Note: JavaScript-facing native module adapter
+    - Path: pkg/workflows/parser.go
+      Note: Core workflow discovery and YAML normalization logic
 ExternalSources: []
-Summary: "Design for a Go-native workflow parsing package and @goja-gha/workflows native module that exposes normalized GitHub Actions workflow structures to JavaScript audit scripts."
+Summary: Design for a Go-native workflow parsing package and @goja-gha/workflows native module that exposes normalized GitHub Actions workflow structures to JavaScript audit scripts.
 LastUpdated: 2026-03-11T13:07:51.797258808-04:00
-WhatFor: "Guide the implementation and review of workflow parsing in Go, and explain how the JS audit scripts should consume the resulting API."
-WhenToUse: "Use when implementing the parser, reviewing the API shape, or onboarding a new contributor to workflow-analysis work."
+WhatFor: Guide the implementation and review of workflow parsing in Go, and explain how the JS audit scripts should consume the resulting API.
+WhenToUse: Use when implementing the parser, reviewing the API shape, or onboarding a new contributor to workflow-analysis work.
 ---
+
 
 # Go-native workflow parsing module for goja-gha
 

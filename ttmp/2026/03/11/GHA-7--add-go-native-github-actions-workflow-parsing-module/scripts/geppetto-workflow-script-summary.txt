@@ -1,0 +1,7 @@
+Repository: go-go-golems/geppetto
+Workspace: /tmp/geppetto
+Workflow files: 7
+pin-third-party-actions: 22 findings (high)
+checkout-persist-creds: 8 findings (high)
+no-write-all: 0 findings (none)
+permissions-audit: 2 findings (high)
