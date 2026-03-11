@@ -1,27 +1,7 @@
-const io = require("@actions/io");
+const workflows = require("@goja-gha/workflows");
 const ui = require("@goja-gha/ui");
 const findings = require("lib/findings.js");
 const workspaceLib = require("lib/workspace.js");
-
-function parseUsesEntries(fileName, content) {
-  const entries = [];
-  const lines = content.split(/\r?\n/);
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    const match = line.match(/^\s*(?:-\s*)?uses:\s*['"]?([^'"]+)['"]?\s*$/);
-    if (!match) {
-      continue;
-    }
-    entries.push({
-      fileName,
-      line: i + 1,
-      uses: match[1].trim()
-    });
-  }
-
-  return entries;
-}
 
 function isLocalReference(spec) {
   return spec.startsWith("./");
@@ -43,20 +23,16 @@ function isFullSha(ref) {
   return /^[0-9a-f]{40}$/i.test(ref);
 }
 
-function collectFindings(workflowFiles, workspace) {
+function collectFindings(documents) {
   const collected = [];
 
-  for (const fileName of workflowFiles) {
-    const fullPath = `${workspace}/.github/workflows/${fileName}`;
-    const content = io.readFile(fullPath);
-    const entries = parseUsesEntries(fileName, content);
-
-    for (const entry of entries) {
-      if (isLocalReference(entry.uses) || isDockerReference(entry.uses)) {
+  for (const document of documents) {
+    for (const reference of document.uses || []) {
+      if (isLocalReference(reference.uses) || isDockerReference(reference.uses)) {
         continue;
       }
 
-      const ref = extractRef(entry.uses);
+      const ref = extractRef(reference.uses);
       if (isFullSha(ref)) {
         continue;
       }
@@ -65,16 +41,19 @@ function collectFindings(workflowFiles, workspace) {
         ruleId: "pin-third-party-actions",
         severity: "high",
         scope: "workflow",
-        message: `Action or reusable workflow is not pinned to a full commit SHA: ${entry.uses}`,
+        message: `Action or reusable workflow is not pinned to a full commit SHA: ${reference.uses}`,
         whyItMatters: "Mutable refs such as tags and branches can change without notice, which increases supply-chain risk in GitHub Actions workflows.",
         evidence: {
-          path: `.github/workflows/${entry.fileName}`,
-          line: entry.line,
-          uses: entry.uses
+          path: document.path,
+          line: reference.line,
+          uses: reference.uses,
+          kind: reference.kind,
+          jobId: reference.jobId || null,
+          stepName: reference.stepName || null
         },
         remediation: {
           summary: "Pin external actions and reusable workflows to a full commit SHA.",
-          example: `${entry.uses.split("@")[0]}@0123456789abcdef0123456789abcdef01234567`
+          example: `${reference.uses.split("@")[0]}@0123456789abcdef0123456789abcdef01234567`
         }
       }));
     }
@@ -114,13 +93,14 @@ function renderReport(result) {
 
 module.exports = function () {
   const workspace = workspaceLib.resolveWorkspace();
-  const workflowFiles = workspaceLib.tryReadWorkflowFiles(io);
+  const workflowFiles = workflows.listFiles();
+  const documents = workflows.parseAll();
   const result = {
     scriptId: "pin-third-party-actions",
     repository: process.env.GITHUB_REPOSITORY || null,
     workspace,
     workflowFiles,
-    findings: collectFindings(workflowFiles, workspace)
+    findings: collectFindings(documents)
   };
 
   result.summary = findings.summarizeFindings(result.findings);

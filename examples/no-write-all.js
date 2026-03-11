@@ -1,74 +1,28 @@
-const io = require("@actions/io");
+const workflows = require("@goja-gha/workflows");
 const ui = require("@goja-gha/ui");
 const findings = require("lib/findings.js");
 const workspaceLib = require("lib/workspace.js");
 
-function indentationWidth(line) {
-  const match = line.match(/^(\s*)/);
-  return match ? match[1].length : 0;
-}
-
-function collectFindings(workflowFiles, workspace) {
+function collectFindings(documents) {
   const collected = [];
 
-  for (const fileName of workflowFiles) {
-    const fullPath = `${workspace}/.github/workflows/${fileName}`;
-    const lines = io.readFile(fullPath).split(/\r?\n/);
-
-    let jobsIndent = null;
-    let currentJobId = null;
-    let currentJobIndent = null;
-
-    for (let i = 0; i < lines.length; i += 1) {
-      const line = lines[i];
-      if (line.trim() === "") {
+  for (const document of documents) {
+    for (const permission of document.permissions || []) {
+      if (permission.kind !== "scalar" || permission.value !== "write-all") {
         continue;
       }
-
-      const indent = indentationWidth(line);
-
-      if (jobsIndent !== null && indent <= jobsIndent && !/^\s*jobs:\s*$/.test(line)) {
-        currentJobId = null;
-        currentJobIndent = null;
-      }
-
-      const jobsMatch = line.match(/^(\s*)jobs:\s*$/);
-      if (jobsMatch) {
-        jobsIndent = jobsMatch[1].length;
-        currentJobId = null;
-        currentJobIndent = null;
-        continue;
-      }
-
-      if (jobsIndent !== null && indent > jobsIndent) {
-        const jobMatch = line.match(/^(\s*)([A-Za-z0-9_-]+):\s*$/);
-        if (jobMatch && jobMatch[1].length === jobsIndent + 2) {
-          currentJobId = jobMatch[2];
-          currentJobIndent = jobMatch[1].length;
-          continue;
-        }
-      }
-
-      const permissionsMatch = line.match(/^\s*permissions:\s*['"]?(write-all)['"]?\s*$/);
-      if (!permissionsMatch) {
-        continue;
-      }
-
-      const scope = currentJobId && currentJobIndent !== null && indent > currentJobIndent
-        ? "job"
-        : "workflow";
 
       collected.push(findings.makeFinding({
         ruleId: "no-write-all",
         severity: "high",
-        scope: "workflow",
-        message: `${scope === "job" ? `Job ${currentJobId}` : "Workflow"} uses permissions: write-all`,
+        scope: permission.scope || "workflow",
+        message: `${permission.scope === "job" ? `Job ${permission.jobId}` : "Workflow"} uses permissions: write-all`,
         whyItMatters: "Broad write-all permissions give every permission category write access, which increases the blast radius of compromised workflow execution.",
         evidence: {
-          path: `.github/workflows/${fileName}`,
-          line: i + 1,
-          scope,
-          job: scope === "job" ? currentJobId : null,
+          path: document.path,
+          line: permission.line,
+          scope: permission.scope,
+          job: permission.scope === "job" ? permission.jobId : null,
           permissions: "write-all"
         },
         remediation: {
@@ -112,13 +66,14 @@ function renderReport(result) {
 
 module.exports = function () {
   const workspace = workspaceLib.resolveWorkspace();
-  const workflowFiles = workspaceLib.tryReadWorkflowFiles(io);
+  const workflowFiles = workflows.listFiles();
+  const documents = workflows.parseAll();
   const result = {
     scriptId: "no-write-all",
     repository: process.env.GITHUB_REPOSITORY || null,
     workspace,
     workflowFiles,
-    findings: collectFindings(workflowFiles, workspace)
+    findings: collectFindings(documents)
   };
 
   result.summary = findings.summarizeFindings(result.findings);

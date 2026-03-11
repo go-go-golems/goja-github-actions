@@ -1,7 +1,7 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
-const io = require("@actions/io");
 const ui = require("@goja-gha/ui");
+const workflowDocs = require("@goja-gha/workflows");
 const findings = require("lib/findings.js");
 const workspaceLib = require("lib/workspace.js");
 
@@ -228,7 +228,7 @@ module.exports = function () {
   const selectedActions = resolveSelectedActions(octokit, owner, repo, permissions);
   const workflowPermissions = octokit.rest.actions.getWorkflowPermissionsRepository({ owner, repo }).data;
   const workflowsResponse = octokit.rest.actions.listRepoWorkflows({ owner, repo }).data;
-  const workflows = workflowsResponse.workflows || [];
+  const apiWorkflows = workflowsResponse.workflows || [];
 
   const result = {
     scriptId: "permissions-audit",
@@ -241,13 +241,13 @@ module.exports = function () {
     selectedActionsStatus: selectedActions.status,
     selectedActionsReason: selectedActions.reason,
     workflowPermissions,
-    workflowCount: workflowsResponse.total_count || workflows.length,
-    workflows: workflows.map((workflow) => ({
+    workflowCount: workflowsResponse.total_count || apiWorkflows.length,
+    workflows: apiWorkflows.map((workflow) => ({
       id: workflow.id,
       name: workflow.name,
       path: workflow.path || null
     })),
-    localWorkflowFiles: workspaceLib.tryReadWorkflowFiles(io)
+    localWorkflowFiles: workflowDocs.listFiles()
   };
   result.findings = buildFindings(result);
   result.summary = findings.summarizeFindings(result.findings);
