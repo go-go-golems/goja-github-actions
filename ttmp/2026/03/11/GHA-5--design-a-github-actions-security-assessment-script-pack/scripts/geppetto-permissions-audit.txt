@@ -1,0 +1,49 @@
+GitHub Actions Audit
+====================
+
+OK     Inspected go-go-golems/geppetto
+
+Repository            go-go-golems/geppetto
+
+Workspace             /tmp/geppetto
+
+Actor                 unknown
+
+Event                 unknown
+
+Allowed actions       all
+
+Workflow permissions  read
+
+Workflow count        10
+
+SKIP   selected-actions only applies when allowed_actions == "selected" (got all)
+
+WARN   Runner output file not written: runner output file path is empty
+
+WARN   Step summary file not written: runner summary file path is empty
+
+Workflows
+---------
+Name                 Path                                     
+-------------------  -----------------------------------------
+CodeQL Analysis      .github/workflows/codeql-analysis.yml    
+Dependency Scanning  .github/workflows/dependency-scanning.yml
+golangci-lint        .github/workflows/lint.yml               
+golang-pipeline      .github/workflows/push.yml               
+release              .github/workflows/release.yml            
+Secret Scanning      .github/workflows/secret-scanning.yml    
+tag-release-notes    .github/workflows/tag-release-notes.yml  
+Copilot              dynamic/copilot-swe-agent/copilot        
+Dependabot Updates   dynamic/dependabot/dependabot-updates    
+Dependency Graph     dynamic/dependabot/update-graph          
+
+Local workflow files
+--------------------
+- codeql-analysis.yml
+- dependency-scanning.yml
+- lint.yml
+- push.yml
+- release.yml
+- secret-scanning.yml
+- tag-release-notes.yml
