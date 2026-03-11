@@ -98,6 +98,9 @@ func TestPermissionsAuditExampleViaCLI(t *testing.T) {
 	if got, want := result["repository"], "acme/widgets"; got != want {
 		t.Fatalf("repository = %v, want %v", got, want)
 	}
+	if got, want := result["workspace"], workspace; got != want {
+		t.Fatalf("workspace = %v, want %v", got, want)
+	}
 	if got, want := result["workflowCount"], float64(2); got != want {
 		t.Fatalf("workflowCount = %v, want %v", got, want)
 	}
@@ -274,6 +277,8 @@ func TestPermissionsAuditExamplePrintsHumanReportWithoutJSONResult(t *testing.T)
 	for _, needle := range []string{
 		"GitHub Actions Audit",
 		"Inspected acme/widgets",
+		"Workspace",
+		workspace,
 		"Allowed actions",
 		"selected-actions only applies when allowed_actions == \"selected\"",
 		"Workflows",

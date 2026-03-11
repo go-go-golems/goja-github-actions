@@ -52,6 +52,7 @@ function renderAuditReport(result) {
   const report = ui.report("GitHub Actions Audit")
     .status("ok", `Inspected ${result.repository}`)
     .kv("Repository", result.repository)
+    .kv("Workspace", result.workspace || "unknown")
     .kv("Actor", result.actor || "unknown")
     .kv("Event", result.eventName || "unknown")
     .kv("Allowed actions", result.permissions.allowed_actions || "unknown")
@@ -119,6 +120,7 @@ module.exports = function () {
     actor: github.context.actor || null,
     eventName: github.context.event_name || null,
     repository: `${owner}/${repo}`,
+    workspace: process.env.GITHUB_WORKSPACE || process.cwd() || null,
     permissions,
     selectedActions: selectedActions.data,
     selectedActionsStatus: selectedActions.status,
