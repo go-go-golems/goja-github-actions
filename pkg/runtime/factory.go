@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	ghacli "github.com/go-go-golems/goja-github-actions/pkg/cli"
@@ -27,9 +28,9 @@ type Settings struct {
 }
 
 type State struct {
-	Environment    map[string]string
-	ExitCode       int
-	FailureMessage string
+	Environment         map[string]string
+	ExitCode            int
+	FailureMessage      string
 	HumanOutputRendered bool
 }
 
@@ -57,6 +58,19 @@ func NewSettings(
 		Environment: settings.ProcessEnv(),
 	}
 	return settings
+}
+
+func (s *Settings) ExecutionRoot() string {
+	if s == nil {
+		return "."
+	}
+	if strings.TrimSpace(s.Workspace) != "" {
+		return s.Workspace
+	}
+	if strings.TrimSpace(s.WorkingDirectory) != "" {
+		return s.WorkingDirectory
+	}
+	return "."
 }
 
 func BuildFactory(settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengine.Factory, error) {

@@ -56,7 +56,7 @@ module.exports = function () {
 	if got, want := exported["workspace"], "/workspace"; got != want {
 		t.Fatalf("workspace = %v, want %v", got, want)
 	}
-	if got, want := exported["cwd"], tempDir; got != want {
+	if got, want := exported["cwd"], "/workspace"; got != want {
 		t.Fatalf("cwd = %v, want %v", got, want)
 	}
 }
@@ -100,5 +100,18 @@ module.exports = async function () {
 	}
 	if got, want := exported["cwd"], tempDir; got != want {
 		t.Fatalf("cwd = %v, want %v", got, want)
+	}
+}
+
+func TestExecutionRootPrefersWorkspaceOverWorkingDirectory(t *testing.T) {
+	t.Parallel()
+
+	settings := &Settings{
+		WorkingDirectory: "/tmp/working",
+		Workspace:        "/tmp/workspace",
+	}
+
+	if got, want := settings.ExecutionRoot(), "/tmp/workspace"; got != want {
+		t.Fatalf("ExecutionRoot() = %q, want %q", got, want)
 	}
 }

@@ -37,7 +37,15 @@ Why this matters: `process.env` is not just a passive view of the host process. 
 
 ### `process.cwd()`
 
-Returns the resolved working directory. This is the same value the runtime uses for relative file operations and the default subprocess cwd.
+Returns the runtime execution root.
+
+As of the current implementation, that execution root is:
+
+1. the resolved workspace, when one is available;
+2. otherwise the resolved working directory;
+3. otherwise `"."`.
+
+This is the same value the runtime uses for relative file operations and the default subprocess cwd. In practice, that means scripts now behave workspace-first by default.
 
 ### `process.stdout.write(value)` and `process.stderr.write(value)`
 

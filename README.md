@@ -12,6 +12,8 @@ The current implementation provides:
 - a local composite action wrapper in [`action.yml`](./action.yml),
 - CI coverage for unit tests, CLI integration tests, and local-action smoke runs.
 
+By default, JavaScript now runs workspace-first: `process.cwd()`, relative `@actions/io` paths, and default `@actions/exec` commands all resolve against `GITHUB_WORKSPACE` when one is available.
+
 ## Current Status
 
 `goja-gha run` executes CommonJS entrypoints and supports both synchronous and `async` exports. The first shipped module surface is intentionally narrow and centered on the initial permissions-audit use case:

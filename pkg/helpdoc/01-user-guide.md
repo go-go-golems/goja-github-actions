@@ -183,6 +183,13 @@ The entrypoint contract is:
 
 The runtime awaits returned Promises. That means `async` exports are first-class rather than a side case.
 
+Path behavior is workspace-first by default:
+
+- `process.cwd()` resolves to the workspace when one is set,
+- relative `@actions/io` calls resolve against that same root,
+- default `@actions/exec` subprocesses also start there,
+- explicit `exec(..., { cwd })` still overrides the default for that command.
+
 Pseudocode for the entrypoint behavior looks like this:
 
 ```text

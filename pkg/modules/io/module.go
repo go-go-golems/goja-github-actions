@@ -44,10 +44,10 @@ func Spec(deps *Dependencies) ggjengine.ModuleSpec {
 }
 
 func (m *Module) workingDirectory() string {
-	if m.deps == nil || m.deps.Settings == nil || strings.TrimSpace(m.deps.Settings.WorkingDirectory) == "" {
+	if m.deps == nil || m.deps.Settings == nil {
 		return "."
 	}
-	return m.deps.Settings.WorkingDirectory
+	return m.deps.Settings.ExecutionRoot()
 }
 
 func (m *Module) resolvePath(path string) string {

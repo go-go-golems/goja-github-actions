@@ -219,8 +219,8 @@ func (m *Module) cwd(options execOptions) string {
 	if strings.TrimSpace(options.Cwd) != "" {
 		return options.Cwd
 	}
-	if m.deps != nil && m.deps.Settings != nil && strings.TrimSpace(m.deps.Settings.WorkingDirectory) != "" {
-		return m.deps.Settings.WorkingDirectory
+	if m.deps != nil && m.deps.Settings != nil {
+		return m.deps.Settings.ExecutionRoot()
 	}
 	return "."
 }

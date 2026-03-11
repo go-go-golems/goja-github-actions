@@ -51,10 +51,10 @@ func (i *processInitializer) InitRuntime(ctx *ggjengine.RuntimeContext) error {
 	if err := processObject.Set("env", envObject); err != nil {
 		return errors.Wrap(err, "set process.env")
 	}
-	if err := processObject.Set("cwd", func() string { return i.settings.WorkingDirectory }); err != nil {
+	if err := processObject.Set("cwd", func() string { return i.settings.ExecutionRoot() }); err != nil {
 		return errors.Wrap(err, "set process.cwd")
 	}
-	if err := processObject.Set("workingDirectory", i.settings.WorkingDirectory); err != nil {
+	if err := processObject.Set("workingDirectory", i.settings.ExecutionRoot()); err != nil {
 		return errors.Wrap(err, "set process.workingDirectory")
 	}
 	if err := processObject.Set("exitCode", i.settings.State.ExitCode); err != nil {
