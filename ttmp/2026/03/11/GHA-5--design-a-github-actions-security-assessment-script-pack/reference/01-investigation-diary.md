@@ -10,6 +10,8 @@ DocType: reference
 Intent: long-term
 Owners: []
 RelatedFiles:
+    - Path: examples/checkout-persist-creds.js
+      Note: Second local lint script implemented in Step 5
     - Path: examples/pin-third-party-actions.js
       Note: First local lint script implemented in Step 4
     - Path: integration/examples_test.go
@@ -32,6 +34,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -415,5 +418,102 @@ human report missing "pin-third-party-actions"
     "status": "findings"
   },
   "findingCount": 22
+}
+```
+
+## Step 5: Implement the checkout credential hardening rule
+
+This step delivered `checkout-persist-creds.js`, the second local workflow lint script in the GHA-5 backlog. It scans workflow step blocks, detects `actions/checkout@...`, and emits a finding when the step does not explicitly set `persist-credentials: false`. This rule is narrower than the pinning rule, but it is important because it targets a concrete hardening control that was called out in the original planning notes.
+
+The first parser version was too shallow. It only matched `- uses:` directly on the step-start line and missed the common form where a step starts with `- name:` and puts `uses:` on the next line. I rewrote the parser to inspect whole step blocks, which fixed both the integration fixture and the real `/tmp/geppetto` results.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 3)
+
+**Assistant interpretation:** Continue down the GHA-5 task list with the next local lint rule.
+
+**Inferred user intent:** Build out the initial core lint pack methodically, validating each rule against both fixtures and a real repository.
+
+### What I did
+
+- Added [checkout-persist-creds.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/checkout-persist-creds.js).
+- Added integration coverage in [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go) for:
+  - JSON output
+  - human-readable report output
+- Ran the script against `/tmp/geppetto` in `--json-result` and human-report modes.
+
+### Why
+
+- `persist-credentials: false` is one of the clearest workflow-level hardening checks from the original planning notes.
+- It complements the new pinning rule well: together they already cover two important supply-chain and token-exposure controls.
+
+### What worked
+
+- The rule produces concrete, path-and-line-specific findings.
+- The geppetto smoke is high-signal because it finds real missing hardening settings, not synthetic edge cases.
+- The updated block parser is flexible enough for the current workflow styles in the repo.
+
+### What didn't work
+
+- The initial parser only recognized checkout when `uses:` appeared on the same `- ...` line.
+- Exact integration failure:
+
+```text
+summary.findingCount = 0, want 1
+```
+
+- That bug also understated the real geppetto result, showing only 3 findings before the parser was fixed.
+
+### What I learned
+
+- Workflow lint rules that reason about step-local configuration need a step-block parser, not just line-by-line regexes.
+- `/tmp/geppetto` currently has 6 checkout steps missing `persist-credentials: false`.
+
+### What was tricky to build
+
+- The subtle part was deciding where a step block ends. The current compromise is pragmatic:
+  - detect lines that start a step with `- ...`,
+  - collect lines until the next step at the same indentation,
+  - inspect the accumulated block for `name:`, `uses:`, and `persist-credentials:`.
+
+### What warrants a second pair of eyes
+
+- Whether this rule should eventually treat missing `persist-credentials` differently from explicitly `true`.
+- Whether a later YAML helper should replace the current block-scanning logic.
+
+### What should be done in the future
+
+- Implement `no-write-all.js` next.
+- Start moving repeated workflow-scanning logic into a shared helper once the third lint rule lands.
+
+### Code review instructions
+
+- Start with [checkout-persist-creds.js](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/checkout-persist-creds.js).
+- Then inspect the checkout-specific integration tests in [examples_test.go](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go).
+- Finally compare the live `/tmp/geppetto` results against the corresponding checkout steps in the repository workflows.
+
+### Technical details
+
+- Validation commands:
+  - `GOWORK=off go test ./integration`
+  - `source .envrc && GOWORK=off go run ./cmd/goja-gha run --script ./examples/checkout-persist-creds.js --cwd /tmp --workspace /tmp/geppetto --json-result | jq '{summary, findingCount: (.findings|length), findings: [.findings[] | {path: .evidence.path, line: .evidence.line, stepName: .evidence.stepName, uses: .evidence.uses}]}'`
+- Live `/tmp/geppetto` result summary:
+
+```json
+{
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 6,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 6,
+    "highestSeverity": "high",
+    "status": "findings"
+  },
+  "findingCount": 6
 }
 ```

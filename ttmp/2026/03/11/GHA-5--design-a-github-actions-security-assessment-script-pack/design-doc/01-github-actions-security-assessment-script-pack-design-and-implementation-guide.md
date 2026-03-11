@@ -12,6 +12,8 @@ Owners: []
 RelatedFiles:
     - Path: cmd/goja-gha/cmds/run.go
       Note: CLI execution path and result printing semantics for scripts
+    - Path: examples/checkout-persist-creds.js
+      Note: Second implemented local workflow lint script from the GHA-5 backlog
     - Path: examples/list-workflows.js
       Note: Existing workflow inventory example that informs future lint scripts
     - Path: examples/permissions-audit.js
@@ -40,6 +42,7 @@ LastUpdated: 2026-03-11T12:22:30.743484419-04:00
 WhatFor: Help a new engineer understand the current goja-gha architecture, the security checks proposed in the imported planning notes, and the concrete scripts to build first.
 WhenToUse: Use when planning or implementing GitHub Actions security assessment scripts, especially when deciding what can be built today versus what needs new runtime support.
 ---
+
 
 
 

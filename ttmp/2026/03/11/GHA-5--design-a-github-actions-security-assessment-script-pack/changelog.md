@@ -15,3 +15,6 @@
 - Implemented `pin-third-party-actions.js` as the first local workflow lint script.
 - Added fixture-style CLI integration coverage for the pinning rule and fixed the initial parser bug so `- uses:` lines are detected correctly.
 - Validated the pinning rule against `/tmp/geppetto`, which currently reports 22 unpinned action or reusable-workflow references across the local workflow files.
+- Implemented `checkout-persist-creds.js` as the second local workflow lint script.
+- Added fixture-style CLI integration coverage for the checkout credential rule and fixed the initial parser so it scans whole step blocks instead of only matching `- uses:` lines.
+- Validated the checkout credential rule against `/tmp/geppetto`, which now reports 6 checkout steps missing `persist-credentials: false`.

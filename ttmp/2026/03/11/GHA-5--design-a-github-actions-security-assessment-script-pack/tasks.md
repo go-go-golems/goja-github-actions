@@ -19,7 +19,7 @@
 ## Phase 2: Build the first local workflow lint scripts
 
 - [x] Implement `pin-third-party-actions.js`.
-- [ ] Implement `checkout-persist-creds.js`.
+- [x] Implement `checkout-persist-creds.js`.
 - [ ] Implement `no-write-all.js`.
 - [ ] Implement `pull-request-target-review.js`.
 - [ ] Implement `workflow-run-review.js`.

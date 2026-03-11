@@ -498,3 +498,134 @@ jobs:
 		}
 	}
 }
+
+func TestCheckoutPersistCredsExampleViaCLI(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+
+	workflow := `name: CI
+jobs:
+  safe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: safe checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+  unsafe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: unsafe checkout
+        uses: actions/checkout@v6
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "ci.yml"), []byte(workflow), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/checkout-persist-creds.js",
+		"--cwd", tempDir,
+		"--workspace", workspace,
+		"--json-result",
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha checkout-persist-creds failed: %v\n%s", err, string(output))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		t.Fatalf("decode json result: %v\n%s", err, string(output))
+	}
+
+	if got, want := result["scriptId"], "checkout-persist-creds"; got != want {
+		t.Fatalf("scriptId = %v, want %v", got, want)
+	}
+	summary, ok := result["summary"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("summary = %#v, want map", result["summary"])
+	}
+	if got, want := summary["findingCount"], float64(1); got != want {
+		t.Fatalf("summary.findingCount = %v, want %v", got, want)
+	}
+	findingsValue, ok := result["findings"].([]interface{})
+	if !ok || len(findingsValue) != 1 {
+		t.Fatalf("findings = %#v, want 1 finding", result["findings"])
+	}
+
+	first, ok := findingsValue[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("first finding = %#v, want map", findingsValue[0])
+	}
+	evidence, ok := first["evidence"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("first finding evidence = %#v, want map", first["evidence"])
+	}
+	if got, want := evidence["stepName"], "unsafe checkout"; got != want {
+		t.Fatalf("evidence.stepName = %v, want %v", got, want)
+	}
+}
+
+func TestCheckoutPersistCredsExamplePrintsHumanReport(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	workflowDir := filepath.Join(workspace, ".github", "workflows")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+
+	workflow := `name: CI
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+`
+	if err := os.WriteFile(filepath.Join(workflowDir, "ci.yml"), []byte(workflow), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/checkout-persist-creds.js",
+		"--cwd", tempDir,
+		"--workspace", workspace,
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha checkout-persist-creds human report failed: %v\n%s", err, string(output))
+	}
+
+	rendered := string(output)
+	for _, needle := range []string{
+		"Checkout Persist Credentials",
+		"checkout-persist-creds",
+		".github/workflows/ci.yml",
+		"actions/checkout@v6",
+	} {
+		if !strings.Contains(rendered, needle) {
+			t.Fatalf("human report missing %q:\n%s", needle, rendered)
+		}
+	}
+}
