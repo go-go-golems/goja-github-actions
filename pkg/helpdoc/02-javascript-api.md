@@ -1,7 +1,7 @@
 ---
 Title: "JavaScript API"
 Slug: "javascript-api"
-Short: "Reference for process globals and the @actions/core, @actions/github, @actions/io, and @actions/exec modules exposed by goja-gha."
+Short: "Reference for process globals and the @actions/core, @actions/github, @actions/io, @actions/exec, and @goja-gha/ui modules exposed by goja-gha."
 Topics:
 - goja
 - github-actions
@@ -205,6 +205,57 @@ For `permissions-audit.js`, these helpers are not equivalent from a permissions 
 That means a fine-grained PAT can succeed on workflow listing and still fail on the permissions endpoints with `403 Resource not accessible by personal access token`.
 
 One more behavioral detail matters for real scripts: `getAllowedActionsRepository(...)` is not universally applicable. GitHub returns `409 Conflict` when the repository policy is not `allowed_actions == "selected"`. The shipped `permissions-audit.js` example now fetches `getGithubActionsPermissionsRepository(...)` first, inspects `allowed_actions`, and skips `getAllowedActionsRepository(...)` when the policy mode is not `selected`.
+
+## `@goja-gha/ui`
+
+This section covers the report builder module implemented in `pkg/modules/ui`.
+
+The purpose of `@goja-gha/ui` is to let scripts describe human-readable terminal output declaratively instead of manually formatting strings. It is intentionally small in v1.
+
+Top-level module functions:
+
+- `ui.report(title)`
+- `ui.enabled()`
+
+Report-builder methods:
+
+- `status(kind, text)`
+- `success(text)`
+- `note(text)`
+- `warn(text)`
+- `error(text)`
+- `kv(label, value)`
+- `list(items)`
+- `table({ columns, rows })`
+- `section(title, fn)`
+- `render()`
+
+Example:
+
+```js
+const ui = require("@goja-gha/ui");
+
+module.exports = function () {
+  ui.report("Audit")
+    .status("ok", "Inspection complete")
+    .kv("Repository", "acme/widgets")
+    .section("Workflows", (section) => {
+      section.table({
+        columns: ["Name", "Path"],
+        rows: [["CI", ".github/workflows/ci.yml"]]
+      });
+    })
+    .render();
+
+  return { ok: true };
+};
+```
+
+Why this matters: the renderer coordinates with the CLI. In normal runs it emits a human report and suppresses the automatic returned-object print. In `--json-result` runs it becomes a no-op so JSON output stays machine-readable.
+
+For the full DSL reference, use:
+
+- `goja-gha help js-report-dsl-api`
 
 ## `@actions/io`
 

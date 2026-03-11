@@ -30,6 +30,7 @@ type State struct {
 	Environment    map[string]string
 	ExitCode       int
 	FailureMessage string
+	HumanOutputRendered bool
 }
 
 func NewSettings(

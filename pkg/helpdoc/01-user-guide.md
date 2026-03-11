@@ -223,6 +223,7 @@ Use this when you want the first real GitHub-oriented application. It combines:
 - `github.context` for repo and event metadata,
 - `@actions/io` for local workflow-directory inspection,
 - `@actions/core` for outputs and summaries.
+- `@goja-gha/ui` for the human-readable terminal report shown during normal runs.
 
 Token requirements matter more for this example than for the simpler workflow-list examples. A fine-grained PAT that works for listing workflows can still fail here, because this script also calls repository Actions permissions endpoints. In practice, the token usually needs:
 
@@ -236,6 +237,8 @@ The example also now follows the GitHub API contract for `selected-actions` more
 - `selectedActions: null`
 - `selectedActionsStatus: "skipped-not-selected-policy"`
 - `selectedActionsReason: ...`
+
+In a normal `run` without `--json-result`, the script now prints a human-oriented report. In a `--json-result` run, the UI report is suppressed and the returned object stays machine-readable.
 
 ### `examples/list-workflows.js`
 

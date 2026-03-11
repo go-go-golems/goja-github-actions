@@ -1,6 +1,7 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 const io = require("@actions/io");
+const ui = require("@goja-gha/ui");
 
 function tryReadWorkflowDir() {
   try {
@@ -45,6 +46,58 @@ function tryWriteAuditSummary(result) {
   }
 }
 
+function renderAuditReport(result) {
+  const report = ui.report("GitHub Actions Audit")
+    .status("ok", `Inspected ${result.repository}`)
+    .kv("Repository", result.repository)
+    .kv("Actor", result.actor || "unknown")
+    .kv("Event", result.eventName || "unknown")
+    .kv("Allowed actions", result.permissions.allowed_actions || "unknown")
+    .kv(
+      "Workflow permissions",
+      result.workflowPermissions.default_workflow_permissions || "unknown"
+    )
+    .kv("Workflow count", String(result.workflowCount));
+
+  if (result.selectedActionsStatus === "fetched") {
+    report.note("selected-actions policy is active for this repository");
+  } else if (result.selectedActionsReason) {
+    report.status("skip", result.selectedActionsReason);
+  }
+
+  if (result.runnerOutput && !result.runnerOutput.written) {
+    report.warn(`Runner output file not written: ${result.runnerOutput.error}`);
+  }
+  if (result.stepSummary && !result.stepSummary.written) {
+    report.warn(`Step summary file not written: ${result.stepSummary.error}`);
+  }
+
+  report.section("Workflows", (section) => {
+    if (!result.workflows.length) {
+      section.note("No workflow definitions were returned by the GitHub API");
+      return;
+    }
+
+    section.table({
+      columns: ["Name", "Path"],
+      rows: result.workflows.map((workflow) => [
+        workflow.name || "(unnamed)",
+        workflow.path || "(none)"
+      ])
+    });
+  });
+
+  report.section("Local workflow files", (section) => {
+    if (!result.localWorkflowFiles.length) {
+      section.note("No local workflow files found under .github/workflows");
+      return;
+    }
+    section.list(result.localWorkflowFiles);
+  });
+
+  report.render();
+}
+
 module.exports = function () {
   const owner = core.getInput("owner") || github.context.repo.owner;
   const repo = core.getInput("repo") || github.context.repo.repo;
@@ -80,6 +133,7 @@ module.exports = function () {
 
   result.runnerOutput = trySetAuditOutput(result);
   result.stepSummary = tryWriteAuditSummary(result);
+  renderAuditReport(result);
 
   return result;
 };

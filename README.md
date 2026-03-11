@@ -7,7 +7,7 @@ The current implementation provides:
 - a Glazed/Cobra CLI with `run` and `doctor`,
 - decoded runner settings plus a shared `github-actions` section,
 - a Goja runtime with `process`, `console`, and script-relative `require(...)`,
-- `@actions/core`, `@actions/github`, `@actions/io`, and `@actions/exec`,
+- `@actions/core`, `@actions/github`, `@actions/io`, `@actions/exec`, and `@goja-gha/ui`,
 - example scripts for outputs, permissions auditing, and workflow inspection,
 - a local composite action wrapper in [`action.yml`](./action.yml),
 - CI coverage for unit tests, CLI integration tests, and local-action smoke runs.
@@ -20,6 +20,7 @@ The current implementation provides:
 - `@actions/github`: `github.context`, generic `request/paginate`, and the first `rest.actions.*` helpers,
 - `@actions/io`: common file and path helpers for local workflow inspection,
 - `@actions/exec`: promise-based command execution with stdout/stderr capture.
+- `@goja-gha/ui`: a report DSL for human-readable terminal summaries.
 
 ## Development
 

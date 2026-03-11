@@ -208,6 +208,82 @@ func TestPermissionsAuditSkipsSelectedActionsWhenPolicyIsNotSelected(t *testing.
 	}
 }
 
+func TestPermissionsAuditExamplePrintsHumanReportWithoutJSONResult(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/acme/widgets/actions/permissions":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"enabled":         true,
+				"allowed_actions": "all",
+			})
+		case "/repos/acme/widgets/actions/permissions/workflow":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"default_workflow_permissions":     "read",
+				"can_approve_pull_request_reviews": false,
+			})
+		case "/repos/acme/widgets/actions/workflows":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"total_count": 1,
+				"workflows": []map[string]interface{}{
+					{"id": 1001, "name": "CI", "path": ".github/workflows/ci.yml"},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	if err := os.MkdirAll(filepath.Join(workspace, ".github", "workflows"), 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, ".github", "workflows", "ci.yml"), []byte("name: CI\n"), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/permissions-audit.js",
+		"--cwd", workspace,
+		"--event-path", "./testdata/events/workflow_dispatch.json",
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_API_URL="+server.URL,
+		"GITHUB_ACTOR=manuel",
+		"GITHUB_EVENT_NAME=workflow_dispatch",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+		"GITHUB_TOKEN=secret-token",
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha permissions-audit human report failed: %v\n%s", err, string(output))
+	}
+
+	rendered := string(output)
+	for _, needle := range []string{
+		"GitHub Actions Audit",
+		"Inspected acme/widgets",
+		"Allowed actions",
+		"selected-actions only applies when allowed_actions == \"selected\"",
+		"Workflows",
+		"CI",
+	} {
+		if !strings.Contains(rendered, needle) {
+			t.Fatalf("human report missing %q:\n%s", needle, rendered)
+		}
+	}
+	if strings.Contains(rendered, "\"repository\"") {
+		t.Fatalf("human report unexpectedly contained raw JSON payload:\n%s", rendered)
+	}
+}
+
 func TestListWorkflowsExampleViaCLI(t *testing.T) {
 	t.Parallel()
 

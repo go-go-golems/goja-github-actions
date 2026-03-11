@@ -16,6 +16,7 @@ import (
 	execmodule "github.com/go-go-golems/goja-github-actions/pkg/modules/exec"
 	githubmodule "github.com/go-go-golems/goja-github-actions/pkg/modules/github"
 	iomodule "github.com/go-go-golems/goja-github-actions/pkg/modules/io"
+	uimodule "github.com/go-go-golems/goja-github-actions/pkg/modules/ui"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
@@ -84,6 +85,7 @@ func (c *RunCommand) Run(_ context.Context, vals *values.Values) error {
 		iomodule.Spec(&iomodule.Dependencies{Settings: settings}),
 		execmodule.Spec(&execmodule.Dependencies{Settings: settings}),
 		githubmodule.Spec(&githubmodule.Dependencies{Settings: settings}),
+		uimodule.Spec(uimodule.NewDependencies(settings)),
 	)
 	if err != nil {
 		return err
@@ -96,15 +98,18 @@ func (c *RunCommand) Run(_ context.Context, vals *values.Values) error {
 		return errors.Errorf("script requested exit code %d", settings.State.ExitCode)
 	}
 
-	if err := maybePrintScriptResult(os.Stdout, result.Export(), runnerSettings.JSONResult); err != nil {
+	if err := maybePrintScriptResult(os.Stdout, result.Export(), runnerSettings.JSONResult, settings.State); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func maybePrintScriptResult(w io.Writer, value interface{}, force bool) error {
+func maybePrintScriptResult(w io.Writer, value interface{}, force bool, state *gharuntime.State) error {
 	if shouldSuppressScriptResult(value) {
+		return nil
+	}
+	if state != nil && state.HumanOutputRendered && !force {
 		return nil
 	}
 	if !force && !isInteractiveWriter(w) {
