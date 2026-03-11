@@ -473,3 +473,85 @@ Error: execute exported function: GoError: runner output file path is empty at g
   }
 }
 ```
+
+## Step 5: Show returned values automatically in interactive shells
+
+This step tightened one last UX gap in `run`. The command had become much easier to debug, but it still had an awkward default: if a script returned a useful value and the user forgot `--json-result`, an interactive shell run could appear to do nothing at all. That was fine for pipeline-safe behavior, but poor for actual operator ergonomics.
+
+The fix keeps both use cases. Interactive stdout now prints the returned value by default, while non-interactive stdout remains quiet unless `--json-result` is set. That preserves stable automation behavior and makes local ad hoc use much less confusing.
+
+### Prompt Context
+
+**User prompt (verbatim):** "When I do without --json-result I get no result at all lol"
+
+**Assistant interpretation:** Adjust the `run` command so interactive shell use still shows the returned value even when the explicit JSON flag is omitted.
+
+**Inferred user intent:** Make the CLI feel sane for everyday local use without breaking the explicit machine-readable output path.
+
+**Commit (code):** N/A — code changes not yet committed
+
+### What I did
+- Updated [`cmd/goja-gha/cmds/run.go`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/cmd/goja-gha/cmds/run.go) to:
+  - detect whether stdout is interactive,
+  - print the exported script result automatically for interactive terminals,
+  - keep non-interactive stdout quiet unless `--json-result` is set.
+- Added regression tests in [`cmd/goja-gha/cmds/run_test.go`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/cmd/goja-gha/cmds/run_test.go).
+- Updated:
+  - [`README.md`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/README.md)
+  - [`pkg/helpdoc/01-user-guide.md`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/pkg/helpdoc/01-user-guide.md)
+
+### Why
+- Users in a real shell expect a returned value to be visible.
+- Automation still needs the old explicit contract: no stdout unless `--json-result` is requested.
+
+### What worked
+- Non-interactive validation still produced no output for:
+  - `GOWORK=off go run ./cmd/goja-gha run --script ./examples/trivial.js`
+- A TTY-backed validation produced the returned JSON without `--json-result`:
+
+```json
+{
+  "cwd": ".",
+  "eventPath": null,
+  "ok": true,
+  "workspace": null
+}
+```
+
+### What didn't work
+- N/A
+
+### What I learned
+- The right split here is interactive vs non-interactive, not "always print" vs "never print".
+- `--json-result` is still useful even after this change because it guarantees output under pipes and tests.
+
+### What was tricky to build
+- The main subtlety was preserving pipeline behavior. Printing by default everywhere would have changed the command contract for scripts and tests. The TTY check kept the change focused on human use.
+
+### What warrants a second pair of eyes
+- [`cmd/goja-gha/cmds/run.go`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/cmd/goja-gha/cmds/run.go) should be reviewed to confirm the TTY detection behavior is acceptable on all supported platforms.
+
+### What should be done in the future
+- Consider whether the CLI should grow a more explicit `--result-format` flag if more output modes are added later.
+
+### Code review instructions
+- Read [`cmd/goja-gha/cmds/run.go`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/cmd/goja-gha/cmds/run.go) and [`cmd/goja-gha/cmds/run_test.go`](/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/cmd/goja-gha/cmds/run_test.go).
+- Validate with:
+  - `GOWORK=off go test ./cmd/goja-gha/cmds`
+  - `GOWORK=off go run ./cmd/goja-gha run --script ./examples/trivial.js`
+  - the same command from an interactive terminal to confirm it prints the returned value
+
+### Technical details
+
+#### Output policy
+
+```text
+if result is nil:
+  print nothing
+else if --json-result is set:
+  print JSON
+else if stdout is an interactive terminal:
+  print JSON
+else:
+  print nothing
+```

@@ -41,6 +41,8 @@ Run the trivial smoke example:
 go run ./cmd/goja-gha run --script ./examples/trivial.js --json-result
 ```
 
+In an interactive terminal, `run` now also prints a returned script value by default even without `--json-result`. Keep `--json-result` when you want guaranteed machine-readable output in pipes, tests, or scripts.
+
 Run the set-output example with local runner files:
 
 ```bash

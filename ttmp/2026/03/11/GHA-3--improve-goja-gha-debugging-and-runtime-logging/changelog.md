@@ -11,6 +11,7 @@
 - Switched the `run` subcommand off the Glazed `cobra.CheckErr()` path so formatted errors reach the terminal cleanly.
 - Updated `permissions-audit.js` to skip the `selected-actions` endpoint unless `allowed_actions == "selected"`.
 - Updated `permissions-audit.js` to treat missing local runner output/summary files as best-effort status reported in JSON instead of a fatal error.
+- Updated `run` so interactive terminals print a returned script value by default, while non-interactive stdout still requires `--json-result`.
 
 ## 2026-03-11
 

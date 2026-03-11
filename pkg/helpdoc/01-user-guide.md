@@ -78,6 +78,8 @@ Run the smallest smoke example:
 go run ./cmd/goja-gha run --script ./examples/trivial.js --json-result
 ```
 
+If stdout is an interactive terminal, `goja-gha run` also prints a returned script value without `--json-result`. Keep `--json-result` for pipes, tests, and any automation that needs guaranteed machine-readable output.
+
 Inspect what the CLI resolved before running anything important:
 
 ```bash

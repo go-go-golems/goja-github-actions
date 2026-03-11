@@ -3,6 +3,7 @@ package cmds
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	githubmodule "github.com/go-go-golems/goja-github-actions/pkg/modules/github"
 	iomodule "github.com/go-go-golems/goja-github-actions/pkg/modules/io"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
+	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -94,15 +96,39 @@ func (c *RunCommand) Run(_ context.Context, vals *values.Values) error {
 		return errors.Errorf("script requested exit code %d", settings.State.ExitCode)
 	}
 
-	if runnerSettings.JSONResult {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(result.Export()); err != nil {
-			return errors.Wrap(err, "encode script result")
-		}
+	if err := maybePrintScriptResult(os.Stdout, result.Export(), runnerSettings.JSONResult); err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func maybePrintScriptResult(w io.Writer, value interface{}, force bool) error {
+	if shouldSuppressScriptResult(value) {
+		return nil
+	}
+	if !force && !isInteractiveWriter(w) {
+		return nil
+	}
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(value); err != nil {
+		return errors.Wrap(err, "encode script result")
+	}
+	return nil
+}
+
+func shouldSuppressScriptResult(value interface{}) bool {
+	return value == nil
+}
+
+func isInteractiveWriter(w io.Writer) bool {
+	file, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	return isatty.IsTerminal(file.Fd()) || isatty.IsCygwinTerminal(file.Fd())
 }
 
 func logRunSettings(
