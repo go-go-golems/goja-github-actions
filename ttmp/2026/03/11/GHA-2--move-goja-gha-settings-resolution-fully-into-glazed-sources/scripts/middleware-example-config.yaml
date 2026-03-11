@@ -1,0 +1,4 @@
+default:
+  cwd: /tmp/from-config
+github-actions:
+  github-token: from-config

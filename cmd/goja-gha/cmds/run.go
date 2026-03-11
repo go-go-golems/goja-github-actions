@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strings"
 
 	glazedcli "github.com/go-go-golems/glazed/pkg/cli"
 	"github.com/go-go-golems/glazed/pkg/cmds"
@@ -16,6 +17,7 @@ import (
 	iomodule "github.com/go-go-golems/goja-github-actions/pkg/modules/io"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type RunCommand struct {
@@ -71,6 +73,8 @@ func (c *RunCommand) Run(_ context.Context, vals *values.Values) error {
 	}
 
 	settings := gharuntime.NewSettings(runnerSettings, githubSettings, environmentSnapshot())
+	logRunSettings(runnerSettings, githubSettings, settings)
+
 	result, err := gharuntime.RunScriptWithModules(
 		context.Background(),
 		settings,
@@ -99,4 +103,31 @@ func (c *RunCommand) Run(_ context.Context, vals *values.Values) error {
 	}
 
 	return nil
+}
+
+func logRunSettings(
+	runnerSettings *ghacli.RunnerSettings,
+	githubSettings *ghacli.GitHubActionsSettings,
+	settings *gharuntime.Settings,
+) {
+	if runnerSettings == nil || githubSettings == nil || settings == nil {
+		return
+	}
+
+	repository := strings.TrimSpace(settings.AmbientEnvironment["GITHUB_REPOSITORY"])
+	eventName := strings.TrimSpace(settings.AmbientEnvironment["GITHUB_EVENT_NAME"])
+
+	log.Debug().
+		Str("component", "run").
+		Str("script", runnerSettings.Script).
+		Str("cwd", runnerSettings.Cwd).
+		Str("workspace", githubSettings.Workspace).
+		Str("event_path", runnerSettings.EventPath).
+		Str("action_path", runnerSettings.ActionPath).
+		Str("repository", repository).
+		Str("event_name", eventName).
+		Bool("github_token_present", strings.TrimSpace(githubSettings.GitHubToken) != "").
+		Bool("json_result", runnerSettings.JSONResult).
+		Bool("debug_flag", runnerSettings.Debug).
+		Msg("Resolved run settings")
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/go-go-golems/goja-github-actions/pkg/contextdata"
 	"github.com/go-go-golems/goja-github-actions/pkg/githubapi"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
+	"github.com/rs/zerolog/log"
 )
 
 const moduleName = "@actions/github"
@@ -53,9 +54,19 @@ func Spec(deps *Dependencies) ggjengine.ModuleSpec {
 }
 
 func (m *Module) getOctokit(call goja.FunctionCall) goja.Value {
-	token := strings.TrimSpace(call.Argument(0).String())
+	token := ""
+	tokenSource := "runtime-settings"
+	if arg := call.Argument(0); arg != nil && !goja.IsUndefined(arg) && !goja.IsNull(arg) {
+		token = strings.TrimSpace(arg.String())
+		tokenSource = "call-argument"
+	}
 	if token == "" {
 		token = m.deps.Settings.GitHubToken
+		if token == "" {
+			tokenSource = "missing"
+		} else {
+			tokenSource = "runtime-settings"
+		}
 	}
 
 	options := octokitOptions{}
@@ -72,8 +83,17 @@ func (m *Module) getOctokit(call goja.FunctionCall) goja.Value {
 			"https://api.github.com",
 		)
 	}
+	normalizedBaseURL := normalizeBaseURL(baseURL)
 
-	client := githubapi.NewClient(token, normalizeBaseURL(baseURL))
+	log.Debug().
+		Str("component", "actions-github").
+		Str("token_source", tokenSource).
+		Bool("token_present", strings.TrimSpace(token) != "").
+		Str("base_url", normalizedBaseURL).
+		Str("repository", m.context.Repository).
+		Msg("Creating Octokit client")
+
+	client := githubapi.NewClient(token, normalizedBaseURL)
 	return m.newOctokitObject(client)
 }
 

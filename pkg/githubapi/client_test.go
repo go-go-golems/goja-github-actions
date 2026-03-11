@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -72,5 +73,14 @@ func TestClientDoRouteReturnsAPIError(t *testing.T) {
 	}
 	if got, want := apiErr.Message, "bad credentials"; got != want {
 		t.Fatalf("message = %q, want %q", got, want)
+	}
+	if got, want := apiErr.Route, "GET /user"; got != want {
+		t.Fatalf("route = %q, want %q", got, want)
+	}
+	if got := apiErr.RequestURL; !strings.Contains(got, "/user") {
+		t.Fatalf("requestURL = %q, want to contain /user", got)
+	}
+	if got := apiErr.Error(); !strings.Contains(got, `route "GET /user"`) {
+		t.Fatalf("error() = %q, want route context", got)
 	}
 }

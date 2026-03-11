@@ -147,7 +147,7 @@ Important fields:
 
 ### `getOctokit(token?, options?)`
 
-Creates the GitHub client object. If `token` is empty, the runtime falls back to the resolved `github-token`. If `options.baseUrl` is empty, the runtime falls back to `GITHUB_API_URL` or `https://api.github.com`.
+Creates the GitHub client object. If `token` is omitted, `undefined`, `null`, or an empty string, the runtime falls back to the resolved `github-token`. If `options.baseUrl` is empty, the runtime falls back to `GITHUB_API_URL` or `https://api.github.com`.
 
 Example:
 
@@ -162,6 +162,8 @@ module.exports = function () {
   });
 };
 ```
+
+Why this matters: script authors can usually call `github.getOctokit()` with no arguments during local and runner-backed executions, as long as the runtime has already resolved a token. That fallback path was explicitly validated during debugging work on `permissions-audit.js`.
 
 ### Generic Request Helpers
 
@@ -194,6 +196,15 @@ Available helpers:
 - `octokit.rest.actions.listRepoWorkflows({ owner, repo })`
 
 These helpers exist because the first real application is a permissions/workflow audit. They are intentionally thin wrappers over the generic request layer.
+
+For `permissions-audit.js`, these helpers are not equivalent from a permissions standpoint:
+
+- `listRepoWorkflows(...)` typically needs repository `Actions: Read`
+- the repository permissions helpers also need repository `Administration: Read`
+
+That means a fine-grained PAT can succeed on workflow listing and still fail on the permissions endpoints with `403 Resource not accessible by personal access token`.
+
+One more behavioral detail matters for real scripts: `getAllowedActionsRepository(...)` is not universally applicable. GitHub returns `409 Conflict` when the repository policy is not `allowed_actions == "selected"`. The shipped `permissions-audit.js` example now fetches `getGithubActionsPermissionsRepository(...)` first, inspects `allowed_actions`, and skips `getAllowedActionsRepository(...)` when the policy mode is not `selected`.
 
 ## `@actions/io`
 
@@ -308,7 +319,9 @@ module.exports = async function () {
 |---|---|---|
 | `require("@actions/...")` fails | Module name is wrong or module was not registered | Use the exact module names documented here |
 | `github.context.repo.owner` is empty | Repository metadata did not resolve from env or payload | Set `GITHUB_REPOSITORY` or provide a realistic event payload |
-| `octokit.request(...)` throws an API error | Route, auth, or base URL is wrong | Check token, route placeholders, and `GITHUB_API_URL` |
+| `octokit.request(...)` throws `401 Bad credentials` | The token is missing, invalid, expired, or not what the runtime used | Run with `--log-level debug --log-format text` and inspect the `Creating Octokit client` and `Received GitHub API response` lines |
+| `octokit.request(...)` throws `403 Resource not accessible by personal access token` | The token is valid but under-scoped for the endpoint | For repository Actions permissions endpoints, add fine-grained PAT repo permissions `Actions: Read` and `Administration: Read` |
+| `octokit.request(...)` throws another API error | Route, auth, or base URL is wrong | Check token, route placeholders, `GITHUB_API_URL`, and the debug request logs |
 | `io.readdir(...)` fails on a relative path | The working directory is not what you expect | Confirm `process.cwd()` or pass `--cwd` |
 | `exec(...)` rejects | The command failed or the binary was not found | Re-run with `silent: false` or inspect `stderr` |
 

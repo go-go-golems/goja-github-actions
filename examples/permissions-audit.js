@@ -10,6 +10,41 @@ function tryReadWorkflowDir() {
   }
 }
 
+function resolveSelectedActions(octokit, owner, repo, permissions) {
+  const allowedActions = permissions && permissions.allowed_actions;
+  if (allowedActions !== "selected") {
+    return {
+      data: null,
+      status: "skipped-not-selected-policy",
+      reason: `selected-actions only applies when allowed_actions == "selected" (got ${allowedActions || "unknown"})`
+    };
+  }
+
+  return {
+    data: octokit.rest.actions.getAllowedActionsRepository({ owner, repo }).data,
+    status: "fetched",
+    reason: null
+  };
+}
+
+function trySetAuditOutput(result) {
+  try {
+    core.setOutput("audit", JSON.stringify(result));
+    return { written: true, error: null };
+  } catch (err) {
+    return { written: false, error: err.message || String(err) };
+  }
+}
+
+function tryWriteAuditSummary(result) {
+  try {
+    core.summary.addHeading("GitHub Actions Audit").addRaw(`${JSON.stringify(result, null, 2)}\n`).write();
+    return { written: true, error: null };
+  } catch (err) {
+    return { written: false, error: err.message || String(err) };
+  }
+}
+
 module.exports = function () {
   const owner = core.getInput("owner") || github.context.repo.owner;
   const repo = core.getInput("repo") || github.context.repo.repo;
@@ -20,7 +55,7 @@ module.exports = function () {
 
   const octokit = github.getOctokit();
   const permissions = octokit.rest.actions.getGithubActionsPermissionsRepository({ owner, repo }).data;
-  const selectedActions = octokit.rest.actions.getAllowedActionsRepository({ owner, repo }).data;
+  const selectedActions = resolveSelectedActions(octokit, owner, repo, permissions);
   const workflowPermissions = octokit.rest.actions.getWorkflowPermissionsRepository({ owner, repo }).data;
   const workflowsResponse = octokit.rest.actions.listRepoWorkflows({ owner, repo }).data;
   const workflows = workflowsResponse.workflows || [];
@@ -30,7 +65,9 @@ module.exports = function () {
     eventName: github.context.event_name || null,
     repository: `${owner}/${repo}`,
     permissions,
-    selectedActions,
+    selectedActions: selectedActions.data,
+    selectedActionsStatus: selectedActions.status,
+    selectedActionsReason: selectedActions.reason,
     workflowPermissions,
     workflowCount: workflowsResponse.total_count || workflows.length,
     workflows: workflows.map((workflow) => ({
@@ -41,8 +78,8 @@ module.exports = function () {
     localWorkflowFiles: tryReadWorkflowDir()
   };
 
-  core.setOutput("audit", JSON.stringify(result));
-  core.summary.addHeading("GitHub Actions Audit").addRaw(`${JSON.stringify(result, null, 2)}\n`).write();
+  result.runnerOutput = trySetAuditOutput(result);
+  result.stepSummary = tryWriteAuditSummary(result);
 
   return result;
 };

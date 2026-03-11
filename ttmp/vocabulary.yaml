@@ -5,6 +5,8 @@ topics:
       description: GitHub Actions automation, runtime, and API work
     - slug: javascript
       description: JavaScript authoring and runtime behavior
+    - slug: glazed
+      description: Glazed CLI framework, schema, config, and middleware topics
 docTypes:
     - slug: index
       description: Ticket overview and entrypoint document
@@ -20,3 +22,5 @@ status:
       description: Document or ticket is currently active and in progress
     - slug: completed
       description: Ticket or document work is finished and validated.
+    - slug: closed
+      description: Ticket or document work was intentionally stopped or superseded before completion

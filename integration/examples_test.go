@@ -104,6 +104,9 @@ func TestPermissionsAuditExampleViaCLI(t *testing.T) {
 	if got := result["localWorkflowFiles"]; got == nil {
 		t.Fatalf("localWorkflowFiles = nil, want non-nil")
 	}
+	if got, want := result["selectedActionsStatus"], "fetched"; got != want {
+		t.Fatalf("selectedActionsStatus = %v, want %v", got, want)
+	}
 
 	outputBytes, err := os.ReadFile(outputFile)
 	if err != nil {
@@ -119,6 +122,89 @@ func TestPermissionsAuditExampleViaCLI(t *testing.T) {
 	}
 	if !strings.Contains(string(summaryBytes), "GitHub Actions Audit") {
 		t.Fatalf("summary missing heading: %s", string(summaryBytes))
+	}
+}
+
+func TestPermissionsAuditSkipsSelectedActionsWhenPolicyIsNotSelected(t *testing.T) {
+	t.Parallel()
+
+	selectedActionsCalls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/acme/widgets/actions/permissions":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"enabled":         true,
+				"allowed_actions": "all",
+			})
+		case "/repos/acme/widgets/actions/permissions/selected-actions":
+			selectedActionsCalls++
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Conflict",
+			})
+		case "/repos/acme/widgets/actions/permissions/workflow":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"default_workflow_permissions":     "read",
+				"can_approve_pull_request_reviews": false,
+			})
+		case "/repos/acme/widgets/actions/workflows":
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"total_count": 1,
+				"workflows": []map[string]interface{}{
+					{"id": 1001, "name": "CI", "path": ".github/workflows/ci.yml"},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	tempDir := t.TempDir()
+	workspace := filepath.Join(tempDir, "workspace")
+	if err := os.MkdirAll(filepath.Join(workspace, ".github", "workflows"), 0o755); err != nil {
+		t.Fatalf("mkdir workspace workflows: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, ".github", "workflows", "ci.yml"), []byte("name: CI\n"), 0o644); err != nil {
+		t.Fatalf("write workflow file: %v", err)
+	}
+
+	cmd := exec.Command("go", "run", "./cmd/goja-gha", "run",
+		"--script", "./examples/permissions-audit.js",
+		"--cwd", workspace,
+		"--event-path", "./testdata/events/workflow_dispatch.json",
+		"--json-result",
+	)
+	cmd.Dir = repoRoot(t)
+	cmd.Env = append(os.Environ(),
+		"GOWORK=off",
+		"GITHUB_API_URL="+server.URL,
+		"GITHUB_ACTOR=manuel",
+		"GITHUB_EVENT_NAME=workflow_dispatch",
+		"GITHUB_REPOSITORY=acme/widgets",
+		"GITHUB_WORKSPACE="+workspace,
+		"GITHUB_TOKEN=secret-token",
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("goja-gha permissions-audit failed: %v\n%s", err, string(output))
+	}
+
+	if selectedActionsCalls != 0 {
+		t.Fatalf("selected-actions endpoint called %d times, want 0", selectedActionsCalls)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		t.Fatalf("decode json result: %v\n%s", err, string(output))
+	}
+
+	if got, want := result["selectedActionsStatus"], "skipped-not-selected-policy"; got != want {
+		t.Fatalf("selectedActionsStatus = %v, want %v", got, want)
+	}
+	if got := result["selectedActions"]; got != nil {
+		t.Fatalf("selectedActions = %v, want nil", got)
 	}
 }
 

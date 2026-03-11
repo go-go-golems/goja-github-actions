@@ -19,21 +19,33 @@ func TestGitHubModuleProvidesContextAndAPIClient(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/repos/acme/widgets/actions/permissions":
+			if got, want := r.Header.Get("Authorization"), "Bearer secret-token"; got != want {
+				t.Fatalf("authorization = %q, want %q", got, want)
+			}
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"enabled":              true,
 				"allowed_actions":      "selected",
 				"github_owned_allowed": true,
 			})
 		case "/repos/acme/widgets/actions/permissions/selected-actions":
+			if got, want := r.Header.Get("Authorization"), "Bearer secret-token"; got != want {
+				t.Fatalf("authorization = %q, want %q", got, want)
+			}
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"patterns_allowed": []string{"acme/*"},
 			})
 		case "/repos/acme/widgets/actions/permissions/workflow":
+			if got, want := r.Header.Get("Authorization"), "Bearer secret-token"; got != want {
+				t.Fatalf("authorization = %q, want %q", got, want)
+			}
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"default_workflow_permissions":     "read",
 				"can_approve_pull_request_reviews": false,
 			})
 		case "/repos/acme/widgets/actions/workflows":
+			if got, want := r.Header.Get("Authorization"), "Bearer secret-token"; got != want {
+				t.Fatalf("authorization = %q, want %q", got, want)
+			}
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"total_count": 1,
 				"workflows": []map[string]interface{}{
@@ -41,6 +53,9 @@ func TestGitHubModuleProvidesContextAndAPIClient(t *testing.T) {
 				},
 			})
 		case "/items":
+			if got, want := r.Header.Get("Authorization"), "Bearer secret-token"; got != want {
+				t.Fatalf("authorization = %q, want %q", got, want)
+			}
 			page := r.URL.Query().Get("page")
 			if page == "" || page == "1" {
 				w.Header().Set("Link", `<`+serverURL+`/items?page=2>; rel="next"`)

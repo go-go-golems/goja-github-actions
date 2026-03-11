@@ -106,6 +106,20 @@ go run ./cmd/goja-gha run \
   --json-result
 ```
 
+For a plain local run, you do not need to provide `GITHUB_OUTPUT` or `GITHUB_STEP_SUMMARY` just to get a result anymore. The example now keeps going and reports best-effort runner-file status under `runnerOutput` and `stepSummary` in the returned JSON.
+
+If you want immediate debugging detail, use the same command with root logging enabled:
+
+```bash
+GITHUB_TOKEN=... \
+GITHUB_REPOSITORY=owner/repo \
+GITHUB_WORKSPACE="$PWD" \
+go run ./cmd/goja-gha --log-level debug --log-format text run \
+  --script ./examples/permissions-audit.js \
+  --event-path ./testdata/events/workflow_dispatch.json \
+  --json-result
+```
+
 ## How Settings Resolve
 
 This section explains the most important behavior for real-world usage: where values come from. If you do not understand this, you will misread both `doctor` output and script behavior.
@@ -208,6 +222,19 @@ Use this when you want the first real GitHub-oriented application. It combines:
 - `@actions/io` for local workflow-directory inspection,
 - `@actions/core` for outputs and summaries.
 
+Token requirements matter more for this example than for the simpler workflow-list examples. A fine-grained PAT that works for listing workflows can still fail here, because this script also calls repository Actions permissions endpoints. In practice, the token usually needs:
+
+- `Actions: Read`
+- `Administration: Read`
+
+If the run fails with `403 Resource not accessible by personal access token`, the token is usually valid but under-scoped for one of those permissions endpoints.
+
+The example also now follows the GitHub API contract for `selected-actions` more closely. It first fetches the repository Actions permissions document and only calls the `selected-actions` endpoint when `permissions.allowed_actions == "selected"`. For repos using other policy modes such as `all`, the result will contain:
+
+- `selectedActions: null`
+- `selectedActionsStatus: "skipped-not-selected-policy"`
+- `selectedActionsReason: ...`
+
 ### `examples/list-workflows.js`
 
 Use this when you want to see `@actions/io` and `@actions/exec` together. It lists workflow files locally and then runs a helper command to inspect repository state.
@@ -251,11 +278,21 @@ That tells you:
 - whether runner-file paths resolved,
 - whether `cwd` and workspace are what you think they are.
 
+Then run the real script with debug logs:
+
+```bash
+go run ./cmd/goja-gha --log-level debug --log-format text run \
+  --script ./examples/permissions-audit.js \
+  --event-path ./testdata/events/workflow_dispatch.json \
+  --json-result
+```
+
 Then narrow the failure:
 
 - If the script never starts, inspect your `--script` path and module-relative imports.
-- If GitHub calls fail, inspect `GITHUB_TOKEN`, `GITHUB_API_URL`, and `github.context`.
+- If GitHub calls fail, inspect `GITHUB_TOKEN`, `GITHUB_API_URL`, `github.context`, and the debug lines for `Creating Octokit client`, `Sending GitHub API request`, and `Received GitHub API response`.
 - If outputs or summaries disappear, inspect `GITHUB_OUTPUT` and `GITHUB_STEP_SUMMARY`.
+- If outputs or summaries are missing during a local run, inspect the returned `runnerOutput` and `stepSummary` objects before assuming the whole script failed.
 - If async code behaves strangely, reduce the script to a single awaited operation and re-run with `--json-result`.
 
 ## Troubleshooting
@@ -263,14 +300,17 @@ Then narrow the failure:
 | Problem | Cause | Solution |
 |---|---|---|
 | `--script is required` | No entrypoint resolved from flags or config | Pass `--script` explicitly and confirm it in `doctor` output |
-| GitHub API calls return auth errors | `GITHUB_TOKEN` or `--github-token` is missing or wrong | Set a token and verify `github_token_present` in `doctor` |
-| Output file stays empty | `GITHUB_OUTPUT` or `--runner-output-file` was not set for a local run | Provide a writable output file path |
-| Summary file stays empty | `GITHUB_STEP_SUMMARY` or `--runner-summary-file` was not set | Provide a writable summary file path |
+| GitHub API calls return `401 Bad credentials` | The token is missing, invalid, expired, or not the token you think the runtime used | Re-run with `--log-level debug --log-format text` and verify `github_token_present=true`, `token_present=true`, and the request status lines |
+| GitHub API calls return `403 Resource not accessible by personal access token` | The token is valid but lacks enough repository permission for the endpoint | For `permissions-audit.js`, grant fine-grained PAT repo permissions `Actions: Read` and `Administration: Read` |
+| The audit result shows `selectedActionsStatus = "skipped-not-selected-policy"` | The repository does not use the `selected` allowed-actions mode | This is expected; inspect `permissions.allowed_actions` and skip the `selected-actions` endpoint for that repo |
+| `runnerOutput.written=false` | `GITHUB_OUTPUT` or `--runner-output-file` was not set for a local run | Provide a writable output file path if you need actual runner output side effects |
+| `stepSummary.written=false` | `GITHUB_STEP_SUMMARY` or `--runner-summary-file` was not set | Provide a writable summary file path if you need a step summary file |
 | A script sees the wrong workspace | `GITHUB_WORKSPACE` beat your expected value in precedence resolution | Run `doctor --output json` and inspect `workspace` |
 | `@actions/exec` returns a rejection | The subprocess failed or was not found | Run the command manually first, then inspect `stderr` in the result |
 
 ## See Also
 
 - `goja-gha help javascript-api`
+- `goja-gha help debugging-goja-gha`
 - `goja-gha help developer-guide`
 - `goja-gha help design-and-internals`

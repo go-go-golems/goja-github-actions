@@ -8,6 +8,7 @@ import (
 	"github.com/dop251/goja"
 	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 func RunScript(ctx context.Context, settings *Settings) (goja.Value, error) {
@@ -19,6 +20,12 @@ func RunScriptWithModules(
 	settings *Settings,
 	modules ...ggjengine.ModuleSpec,
 ) (goja.Value, error) {
+	log.Debug().
+		Str("component", "runtime").
+		Str("script", settings.ScriptPath).
+		Int("module_count", len(modules)).
+		Msg("Creating runtime with modules")
+
 	rt, err := CreateRuntime(ctx, settings, modules...)
 	if err != nil {
 		return nil, err
@@ -37,12 +44,21 @@ func RunScriptWithRuntime(
 	settings *Settings,
 ) (goja.Value, error) {
 	entrypoint := ModuleEntrypoint(settings)
+	log.Debug().
+		Str("component", "runtime").
+		Str("entrypoint", entrypoint).
+		Msg("Resolving entrypoint module")
+
 	moduleValue, err := rt.Require.Require(entrypoint)
 	if err != nil {
 		return nil, errors.Wrapf(err, "load entrypoint %q", entrypoint)
 	}
 
 	if fn, ok := goja.AssertFunction(moduleValue); ok {
+		log.Debug().
+			Str("component", "runtime").
+			Str("entrypoint", entrypoint).
+			Msg("Executing exported function")
 		result, err := callFunction(ctx, rt, fn)
 		if err != nil {
 			return nil, errors.Wrap(err, "execute exported function")
@@ -58,6 +74,11 @@ func RunScriptWithRuntime(
 	for _, candidate := range []string{"main", "default"} {
 		value := moduleObject.Get(candidate)
 		if fn, ok := goja.AssertFunction(value); ok {
+			log.Debug().
+				Str("component", "runtime").
+				Str("entrypoint", entrypoint).
+				Str("export_name", candidate).
+				Msg("Executing exported module function")
 			result, err := callFunction(ctx, rt, fn)
 			if err != nil {
 				return nil, errors.Wrapf(err, "execute exported %s function", candidate)
@@ -111,6 +132,10 @@ func awaitPromise(
 		return value, nil
 	}
 
+	log.Debug().
+		Str("component", "runtime").
+		Msg("Awaiting promise result")
+
 	deadline := time.Now().Add(30 * time.Second)
 	for {
 		snapshotAny, err := rt.Owner.Call(ctx, "await-promise", func(_ context.Context, _ *goja.Runtime) (any, error) {
@@ -130,11 +155,18 @@ func awaitPromise(
 
 		switch snapshot.State {
 		case goja.PromiseStateFulfilled:
+			log.Debug().
+				Str("component", "runtime").
+				Msg("Promise fulfilled")
 			if snapshot.Value == nil {
 				return goja.Undefined(), nil
 			}
 			return snapshot.Value, nil
 		case goja.PromiseStateRejected:
+			log.Debug().
+				Str("component", "runtime").
+				Str("reason", gojaValueString(snapshot.Value)).
+				Msg("Promise rejected")
 			if snapshot.Value == nil {
 				return nil, errors.New("promise rejected")
 			}
@@ -144,6 +176,9 @@ func awaitPromise(
 				return nil, ctx.Err()
 			}
 			if time.Now().After(deadline) {
+				log.Debug().
+					Str("component", "runtime").
+					Msg("Promise wait timed out")
 				return nil, errors.New("timed out waiting for promise")
 			}
 			time.Sleep(10 * time.Millisecond)
@@ -151,4 +186,11 @@ func awaitPromise(
 			return nil, fmt.Errorf("unknown promise state %v", snapshot.State)
 		}
 	}
+}
+
+func gojaValueString(value goja.Value) string {
+	if value == nil || goja.IsUndefined(value) || goja.IsNull(value) {
+		return ""
+	}
+	return value.String()
 }
