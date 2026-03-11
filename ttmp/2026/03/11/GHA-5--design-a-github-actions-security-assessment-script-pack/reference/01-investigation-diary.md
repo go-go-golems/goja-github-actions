@@ -12,6 +12,8 @@ Owners: []
 RelatedFiles:
     - Path: examples/checkout-persist-creds.js
       Note: Second local lint script implemented in Step 5
+    - Path: examples/no-privileged-untrusted-checkout.js
+      Note: Generalized privileged untrusted checkout rule added in Step 10
     - Path: examples/no-write-all.js
       Note: Third local lint script implemented in Step 6
     - Path: examples/pin-third-party-actions.js
@@ -32,6 +34,8 @@ RelatedFiles:
       Note: Shared workspace helper introduced during the first implementation slice
     - Path: pkg/workflows/parser.go
       Note: Parser extended in Step 7 for pull_request_target review
+    - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-no-privileged-untrusted-checkout.json
+      Note: Live geppetto output captured for the generalized checkout rule
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-permissions-audit.json
       Note: Captured JSON output from the live geppetto validation
     - Path: ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-permissions-audit.txt
@@ -50,6 +54,7 @@ LastUpdated: 2026-03-11T12:22:30.776531586-04:00
 WhatFor: Record what was investigated, what was validated, and how the design guide and task list were produced.
 WhenToUse: Use when reviewing how the design was derived or when continuing the implementation work in later steps.
 ---
+
 
 
 
@@ -912,6 +917,97 @@ That keeps the rule explainable and low-noise while still surfacing the most obv
 ```json
 {
   "scriptId": "reusable-workflow-trust",
+  "summary": {
+    "counts": {
+      "critical": 0,
+      "high": 0,
+      "info": 0,
+      "low": 0,
+      "medium": 0
+    },
+    "findingCount": 0,
+    "highestSeverity": null,
+    "status": "passed"
+  },
+  "findings": []
+}
+```
+
+## Step 10: Add the generalized no-privileged-untrusted-checkout rule
+
+This step added `no-privileged-untrusted-checkout.js`, which consolidates the most dangerous shared pattern from the earlier privileged-trigger rules: a workflow with privileged trigger semantics checks out untrusted head content and, in the worst case, executes it. The rule is intentionally cross-cutting. It reuses the existing parser-backed evidence from `pull_request_target` and `workflow_run` contexts, but it expresses the risk in one rule that can be used as a high-signal policy gate.
+
+The point of the rule is not to replace the earlier review-oriented scripts. Those still provide context specific to each trigger family. This script instead acts as the strong, general “this should not happen” rule when a privileged workflow directly crosses into attacker-controlled code checkout.
+
+### Prompt Context
+
+**User prompt (verbatim):** (same as Step 9)
+
+**Assistant interpretation:** Keep pushing the JS security rule pack forward after the reusable-workflow rule instead of pausing at the tooling cleanup.
+
+**Inferred user intent:** Build out the highest-signal GitHub Actions security checks while the parser and validation harness are already in place.
+
+### What I did
+
+- Added `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/no-privileged-untrusted-checkout.js`.
+- Added CLI integration coverage in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go` for:
+  - a `pull_request_target` workflow that checks out PR head content and then runs shell commands,
+  - a `workflow_run` workflow that checks out upstream head content,
+  - the human-readable report output.
+- Updated the ticket validation harness `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/validate-geppetto-security-baseline.sh`.
+- Captured `/tmp/geppetto` output in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/ttmp/2026/03/11/GHA-5--design-a-github-actions-security-assessment-script-pack/scripts/geppetto-no-privileged-untrusted-checkout.json`.
+- Re-ran:
+  - `GOWORK=off go test ./integration`
+  - `make lint`
+  - `make gosec`
+
+### Why
+
+- The rule is explicitly called out in the original imported plan as one of the most important policy checks.
+- It gives the current pack a strong “do not do this” rule rather than only review-oriented heuristics.
+
+### What worked
+
+- The parser surface was already sufficient, so the rule could stay small and focused.
+- The integration tests prove the rule works across both privileged trigger families we currently model.
+- `/tmp/geppetto` currently passes the rule, which is a good sign for the local workflow set.
+
+### What didn't work
+
+- N/A in this step.
+
+### What I learned
+
+- The earlier trigger-specific rules and the generalized rule can coexist usefully: one for detailed review context, one for a direct high-signal policy violation.
+
+### What was tricky to build
+
+- The only real design choice was avoiding needless duplication while still making the rule readable on its own. I kept the shared logic small and local to the script instead of prematurely factoring out another JS helper layer.
+
+### What warrants a second pair of eyes
+
+- Whether this generalized rule should eventually absorb some of the trigger-specific “critical” findings from `pull_request_target-review` and `workflow-run-review`, or remain a separate gate-style rule.
+
+### What should be done in the future
+
+- Add `no-artifact-bridge.js` or `no-cache-bridge.js` next if we want to keep building the advanced trust-boundary pack.
+
+### Code review instructions
+
+- Start with `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/examples/no-privileged-untrusted-checkout.js`.
+- Then review the new integration cases in `/home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions/integration/examples_test.go`.
+- Validate with:
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && GOWORK=off go test ./integration`
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && make lint`
+  - `cd /home/manuel/workspaces/2026-03-10/gh-actions-goja-validation/goja-github-actions && make gosec`
+
+### Technical details
+
+- Live `/tmp/geppetto` result:
+
+```json
+{
+  "scriptId": "no-privileged-untrusted-checkout",
   "summary": {
     "counts": {
       "critical": 0,

@@ -32,3 +32,5 @@
 - Fixed `make gosec` by tightening runner-file permissions and documenting the intentional subprocess execution boundary in the exec module.
 - Implemented `reusable-workflow-trust.js` as the next workflow trust rule, focused on external-owner reusable workflows and unpinned reusable workflow refs.
 - Added fixture-style CLI integration coverage for reusable workflow trust checks and revalidated `/tmp/geppetto`; the new rule currently passes with zero findings.
+- Implemented `no-privileged-untrusted-checkout.js` as the generalized privileged-trigger checkout rule spanning both `pull_request_target` and `workflow_run`.
+- Added fixture-style CLI integration coverage for the generalized untrusted-checkout rule and revalidated `/tmp/geppetto`; the rule currently passes with zero findings.

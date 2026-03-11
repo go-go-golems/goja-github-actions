@@ -43,7 +43,7 @@
 
 ## Phase 5: Advanced trust-boundary analysis
 
-- [ ] Implement `no-privileged-untrusted-checkout.js`.
+- [x] Implement `no-privileged-untrusted-checkout.js`.
 - [x] Implement `reusable-workflow-trust.js`.
 - [ ] Implement `no-artifact-bridge.js`.
 - [ ] Implement `no-cache-bridge.js`.
