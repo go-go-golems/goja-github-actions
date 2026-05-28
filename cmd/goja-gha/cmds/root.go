@@ -17,7 +17,9 @@ import (
 	help_cmd "github.com/go-go-golems/glazed/pkg/help/cmd"
 	ghacli "github.com/go-go-golems/goja-github-actions/pkg/cli"
 	helpdoc "github.com/go-go-golems/goja-github-actions/pkg/helpdoc"
+	"github.com/go-go-golems/logcopter/pkg/logcopter"
 	"github.com/pkg/errors"
+	zlog "github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
