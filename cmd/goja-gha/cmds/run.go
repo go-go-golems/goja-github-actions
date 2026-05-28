@@ -21,7 +21,6 @@ import (
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 type RunCommand struct {

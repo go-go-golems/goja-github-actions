@@ -1,0 +1,3 @@
+package goja_github_actions
+
+//go:generate go tool logcopter-gen -include-main -area-prefix go-go-golems.goja-github-actions -strip-prefix github.com/go-go-golems/goja-github-actions ./cmd/... ./pkg/...

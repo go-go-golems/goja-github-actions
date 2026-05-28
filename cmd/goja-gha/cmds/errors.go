@@ -8,7 +8,6 @@ import (
 
 	"github.com/dop251/goja"
 	"github.com/go-go-golems/goja-github-actions/pkg/githubapi"
-	"github.com/rs/zerolog/log"
 )
 
 func FormatCLIError(err error) string {
