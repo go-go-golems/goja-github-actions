@@ -59,3 +59,11 @@ bump-glazed:
 install:
 	mkdir -p ./dist
 	GOWORK=off go build -o ./dist/$(BINARY_NAME) ./cmd/goja-gha
+
+.PHONY: logcopter-generate
+logcopter-generate:
+	GOWORK=off go generate ./...
+
+.PHONY: logcopter-check
+logcopter-check:
+	GOWORK=off go tool logcopter-gen -include-main -area-prefix go-go-golems.goja-github-actions -strip-prefix github.com/go-go-golems/goja-github-actions -check ./cmd/... ./pkg/...

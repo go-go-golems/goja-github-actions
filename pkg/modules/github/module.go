@@ -11,7 +11,6 @@ import (
 	"github.com/go-go-golems/goja-github-actions/pkg/contextdata"
 	"github.com/go-go-golems/goja-github-actions/pkg/githubapi"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
-	"github.com/rs/zerolog/log"
 )
 
 const moduleName = "@actions/github"

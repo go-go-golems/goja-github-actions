@@ -8,7 +8,6 @@ import (
 	"github.com/dop251/goja"
 	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 func RunScript(ctx context.Context, settings *Settings) (goja.Value, error) {
