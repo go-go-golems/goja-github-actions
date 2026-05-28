@@ -34,9 +34,25 @@ func newRootCommand() *cobra.Command {
 It includes a native @actions/*-style module surface, runner-file support,
 and embedded long-form help pages for users and developers.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return logging.InitLoggerFromCobra(cmd)
+			if err := logging.InitLoggerFromCobra(cmd); err != nil {
+				return err
+			}
+			return configureLogcopterFromCobra(cmd)
 		},
 	}
+}
+
+func configureLogcopterFromCobra(cmd *cobra.Command) error {
+	level, _ := cmd.Flags().GetString("log-level")
+	format, _ := cmd.Flags().GetString("log-format")
+	withCaller, _ := cmd.Flags().GetBool("with-caller")
+
+	return logcopter.Configure(zlog.Logger, logcopter.Config{
+		Level:     level,
+		Format:    format,
+		Caller:    withCaller,
+		Timestamp: true,
+	})
 }
 
 func buildCommand(command cmds.Command) (*cobra.Command, error) {
