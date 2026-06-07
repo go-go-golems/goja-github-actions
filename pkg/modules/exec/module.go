@@ -40,7 +40,7 @@ type execListeners struct {
 	stderr goja.Callable
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
 	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-exec",
 		ModuleName: moduleName,
@@ -262,7 +262,7 @@ func boolProperty(object *goja.Object, key string) bool {
 }
 
 type listenerWriter struct {
-	runner   runtimeowner.Runner
+	runner   runtimeowner.RuntimeOwner
 	callback goja.Callable
 	vm       *goja.Runtime
 }

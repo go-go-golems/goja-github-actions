@@ -2,13 +2,13 @@ package ghacli
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	glazedcli "github.com/go-go-golems/glazed/pkg/cli"
 	"github.com/go-go-golems/glazed/pkg/cmds/fields"
 	"github.com/go-go-golems/glazed/pkg/cmds/sources"
 	"github.com/go-go-golems/glazed/pkg/cmds/values"
-	glazedconfig "github.com/go-go-golems/glazed/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -63,15 +63,32 @@ func ResolveConfigFiles(parsedCommandSections *values.Values) ([]string, error) 
 		return nil, errors.Wrap(err, "decode command settings")
 	}
 
-	configPath, err := glazedconfig.ResolveAppConfigPath(AppName, commandSettings.ConfigFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "resolve config path")
-	}
-	if configPath == "" {
-		return []string{}, nil
+	// Resolve config files using inline XDG/home directory checks.
+	// The old glazedconfig.ResolveAppConfigPath is removed in Glazed v1.3.6.
+	var paths []string
+
+	if commandSettings.ConfigFile != "" {
+		if _, err := os.Stat(commandSettings.ConfigFile); err == nil {
+			paths = append(paths, commandSettings.ConfigFile)
+		}
 	}
 
-	return []string{configPath}, nil
+	if AppName != "" {
+		if xdg, err := os.UserConfigDir(); err == nil && xdg != "" {
+			xdgPath := filepath.Join(xdg, AppName, "config.yaml")
+			if _, err := os.Stat(xdgPath); err == nil {
+				paths = append(paths, xdgPath)
+			}
+		}
+		if home, err := os.UserHomeDir(); err == nil && home != "" {
+			homePath := filepath.Join(home, "."+AppName, "config.yaml")
+			if _, err := os.Stat(homePath); err == nil {
+				paths = append(paths, homePath)
+			}
+		}
+	}
+
+	return paths, nil
 }
 
 func RunnerEnvValuesFromLookup(

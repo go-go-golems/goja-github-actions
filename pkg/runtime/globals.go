@@ -23,7 +23,7 @@ func (i *processInitializer) ID() string {
 	return "goja-gha-process"
 }
 
-func (i *processInitializer) InitRuntime(ctx *ggjengine.RuntimeContext) error {
+func (i *processInitializer) InitRuntime(ctx *ggjengine.RuntimeInitializationContext) error {
 	if ctx == nil || ctx.VM == nil {
 		return errors.New("runtime context is incomplete")
 	}

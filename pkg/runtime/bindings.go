@@ -11,7 +11,7 @@ import (
 
 type Bindings struct {
 	Settings *Settings
-	Owner    runtimeowner.Runner
+	Owner    runtimeowner.RuntimeOwner
 }
 
 var runtimeBindings sync.Map
@@ -28,7 +28,7 @@ func (i *bindingsInitializer) ID() string {
 	return "goja-gha-bindings"
 }
 
-func (i *bindingsInitializer) InitRuntime(ctx *ggjengine.RuntimeContext) error {
+func (i *bindingsInitializer) InitRuntime(ctx *ggjengine.RuntimeInitializationContext) error {
 	if ctx == nil || ctx.VM == nil || ctx.Owner == nil {
 		return errors.New("runtime context is incomplete")
 	}

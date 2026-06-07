@@ -40,7 +40,7 @@ func NewDependencies(settings *gharuntime.Settings) *Dependencies {
 	}
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
 	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-core",
 		ModuleName: moduleName,

@@ -73,12 +73,12 @@ func (s *Settings) ExecutionRoot() string {
 	return "."
 }
 
-func BuildFactory(settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengine.RuntimeFactory, error) {
+func BuildFactory(settings *Settings, modules ...ggjengine.RuntimeModuleRegistrar) (*ggjengine.RuntimeFactory, error) {
 	if settings == nil {
 		return nil, errors.New("runtime settings are nil")
 	}
 
-	factory, err := ggjengine.NewBuilder(
+	factory, err := ggjengine.NewRuntimeFactoryBuilder(
 		ggjengine.WithModuleRootsFromScript(
 			settings.ScriptPath,
 			ggjengine.DefaultModuleRootsOptions(),
@@ -96,13 +96,13 @@ func BuildFactory(settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengi
 	return factory, nil
 }
 
-func CreateRuntime(ctx context.Context, settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengine.Runtime, error) {
+func CreateRuntime(ctx context.Context, settings *Settings, modules ...ggjengine.RuntimeModuleRegistrar) (*ggjengine.Runtime, error) {
 	factory, err := BuildFactory(settings, modules...)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, err := factory.NewRuntime(engine.WithStartupContext(ctx), engine.WithLifetimeContext(ctx))
+	rt, err := factory.NewRuntime(ggjengine.WithStartupContext(ctx), ggjengine.WithLifetimeContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "create goja runtime")
 	}

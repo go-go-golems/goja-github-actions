@@ -22,7 +22,7 @@ type Module struct {
 	deps *Dependencies
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
 	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-workflows",
 		ModuleName: moduleName,

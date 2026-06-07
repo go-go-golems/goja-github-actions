@@ -17,7 +17,7 @@ func RunScript(ctx context.Context, settings *Settings) (goja.Value, error) {
 func RunScriptWithModules(
 	ctx context.Context,
 	settings *Settings,
-	modules ...ggjengine.ModuleSpec,
+	modules ...ggjengine.RuntimeModuleRegistrar,
 ) (goja.Value, error) {
 	log.Debug().
 		Str("component", "runtime").

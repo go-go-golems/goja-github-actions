@@ -29,7 +29,7 @@ type octokitOptions struct {
 	BaseURL string `json:"baseUrl"`
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
 	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-github",
 		ModuleName: moduleName,
