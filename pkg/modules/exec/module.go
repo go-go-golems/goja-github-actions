@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/go-go-goja/pkg/runtimeowner"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/pkg/errors"
@@ -40,8 +40,8 @@ type execListeners struct {
 	stderr goja.Callable
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
-	return ggjengine.NativeModuleSpec{
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
+	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-exec",
 		ModuleName: moduleName,
 		Loader: func(vm *goja.Runtime, moduleObj *goja.Object) {
@@ -262,7 +262,7 @@ func boolProperty(object *goja.Object, key string) bool {
 }
 
 type listenerWriter struct {
-	runner   runtimeowner.Runner
+	runner   runtimeowner.RuntimeOwner
 	callback goja.Callable
 	vm       *goja.Runtime
 }

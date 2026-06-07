@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/goja-github-actions/pkg/runnerfiles"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/pkg/errors"
@@ -40,8 +40,8 @@ func NewDependencies(settings *gharuntime.Settings) *Dependencies {
 	}
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
-	return ggjengine.NativeModuleSpec{
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
+	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-core",
 		ModuleName: moduleName,
 		Loader: func(vm *goja.Runtime, moduleObj *goja.Object) {

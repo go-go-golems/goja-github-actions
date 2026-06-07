@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	ghacli "github.com/go-go-golems/goja-github-actions/pkg/cli"
 	"github.com/pkg/errors"
 )
@@ -73,12 +73,12 @@ func (s *Settings) ExecutionRoot() string {
 	return "."
 }
 
-func BuildFactory(settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengine.Factory, error) {
+func BuildFactory(settings *Settings, modules ...ggjengine.RuntimeModuleRegistrar) (*ggjengine.RuntimeFactory, error) {
 	if settings == nil {
 		return nil, errors.New("runtime settings are nil")
 	}
 
-	factory, err := ggjengine.NewBuilder(
+	factory, err := ggjengine.NewRuntimeFactoryBuilder(
 		ggjengine.WithModuleRootsFromScript(
 			settings.ScriptPath,
 			ggjengine.DefaultModuleRootsOptions(),
@@ -96,13 +96,13 @@ func BuildFactory(settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengi
 	return factory, nil
 }
 
-func CreateRuntime(ctx context.Context, settings *Settings, modules ...ggjengine.ModuleSpec) (*ggjengine.Runtime, error) {
+func CreateRuntime(ctx context.Context, settings *Settings, modules ...ggjengine.RuntimeModuleRegistrar) (*ggjengine.Runtime, error) {
 	factory, err := BuildFactory(settings, modules...)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, err := factory.NewRuntime(ctx)
+	rt, err := factory.NewRuntime(ggjengine.WithStartupContext(ctx), ggjengine.WithLifetimeContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "create goja runtime")
 	}

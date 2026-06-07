@@ -4,14 +4,14 @@ import (
 	"sync"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/go-go-goja/pkg/runtimeowner"
 	"github.com/pkg/errors"
 )
 
 type Bindings struct {
 	Settings *Settings
-	Owner    runtimeowner.Runner
+	Owner    runtimeowner.RuntimeOwner
 }
 
 var runtimeBindings sync.Map
@@ -28,7 +28,7 @@ func (i *bindingsInitializer) ID() string {
 	return "goja-gha-bindings"
 }
 
-func (i *bindingsInitializer) InitRuntime(ctx *ggjengine.RuntimeContext) error {
+func (i *bindingsInitializer) InitRuntime(ctx *ggjengine.RuntimeInitializationContext) error {
 	if ctx == nil || ctx.VM == nil || ctx.Owner == nil {
 		return errors.New("runtime context is incomplete")
 	}

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +17,7 @@ func RunScript(ctx context.Context, settings *Settings) (goja.Value, error) {
 func RunScriptWithModules(
 	ctx context.Context,
 	settings *Settings,
-	modules ...ggjengine.ModuleSpec,
+	modules ...ggjengine.RuntimeModuleRegistrar,
 ) (goja.Value, error) {
 	log.Debug().
 		Str("component", "runtime").

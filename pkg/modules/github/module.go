@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/goja-github-actions/pkg/contextdata"
 	"github.com/go-go-golems/goja-github-actions/pkg/githubapi"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
@@ -29,8 +29,8 @@ type octokitOptions struct {
 	BaseURL string `json:"baseUrl"`
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
-	return ggjengine.NativeModuleSpec{
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
+	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-github",
 		ModuleName: moduleName,
 		Loader: func(vm *goja.Runtime, moduleObj *goja.Object) {

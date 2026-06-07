@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 )
 
@@ -23,8 +23,8 @@ type Module struct {
 	deps *Dependencies
 }
 
-func Spec(deps *Dependencies) ggjengine.ModuleSpec {
-	return ggjengine.NativeModuleSpec{
+func Spec(deps *Dependencies) ggjengine.RuntimeModuleRegistrar {
+	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-io",
 		ModuleName: moduleName,
 		Loader: func(vm *goja.Runtime, moduleObj *goja.Object) {

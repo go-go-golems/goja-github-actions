@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +23,7 @@ func (i *processInitializer) ID() string {
 	return "goja-gha-process"
 }
 
-func (i *processInitializer) InitRuntime(ctx *ggjengine.RuntimeContext) error {
+func (i *processInitializer) InitRuntime(ctx *ggjengine.RuntimeInitializationContext) error {
 	if ctx == nil || ctx.VM == nil {
 		return errors.New("runtime context is incomplete")
 	}
