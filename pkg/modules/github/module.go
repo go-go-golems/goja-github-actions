@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/goja-github-actions/pkg/contextdata"
 	"github.com/go-go-golems/goja-github-actions/pkg/githubapi"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
