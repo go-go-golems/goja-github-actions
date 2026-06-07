@@ -71,6 +71,7 @@ func ResolveConfigFiles(parsedCommandSections *values.Values) ([]string, error) 
 		if _, err := os.Stat(commandSettings.ConfigFile); err == nil {
 			paths = append(paths, commandSettings.ConfigFile)
 		}
+		return paths, nil
 	}
 
 	if AppName != "" {
