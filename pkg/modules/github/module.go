@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
 	"github.com/go-go-golems/goja-github-actions/pkg/contextdata"
 	"github.com/go-go-golems/goja-github-actions/pkg/githubapi"
@@ -30,7 +30,7 @@ type octokitOptions struct {
 }
 
 func Spec(deps *Dependencies) ggjengine.ModuleSpec {
-	return ggjengine.NativeModuleSpec{
+	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-actions-github",
 		ModuleName: moduleName,
 		Loader: func(vm *goja.Runtime, moduleObj *goja.Object) {

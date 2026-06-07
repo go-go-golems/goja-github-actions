@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/go-go-goja/modules"
 	gharuntime "github.com/go-go-golems/goja-github-actions/pkg/runtime"
 	"github.com/go-go-golems/goja-github-actions/pkg/workflows"
@@ -23,7 +23,7 @@ type Module struct {
 }
 
 func Spec(deps *Dependencies) ggjengine.ModuleSpec {
-	return ggjengine.NativeModuleSpec{
+	return ggjengine.NativeModuleRegistrar{
 		ModuleID:   "goja-gha-workflows",
 		ModuleName: moduleName,
 		Loader: func(vm *goja.Runtime, moduleObj *goja.Object) {

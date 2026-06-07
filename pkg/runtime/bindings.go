@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/dop251/goja"
-	ggjengine "github.com/go-go-golems/go-go-goja/engine"
+	ggjengine "github.com/go-go-golems/go-go-goja/pkg/engine"
 	"github.com/go-go-golems/go-go-goja/pkg/runtimeowner"
 	"github.com/pkg/errors"
 )
